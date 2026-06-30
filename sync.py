@@ -110,14 +110,25 @@ def upsert_notion_row(data: dict):
     resp.raise_for_status()
 
 
-def main():
-    target_date = sys.argv[1] if len(sys.argv) > 1 else (
-        datetime.date.today() - datetime.timedelta(days=1)
-    ).isoformat()
-
+def sync_one_day(target_date: str):
     data = fetch_garmin_data(target_date)
     upsert_notion_row(data)
     print(f"Synced {target_date}: {data}")
+
+
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "--days-back":
+        days_back = int(sys.argv[2])
+        today = datetime.date.today()
+        for i in range(days_back, 0, -1):
+            target_date = (today - datetime.timedelta(days=i)).isoformat()
+            sync_one_day(target_date)
+        return
+
+    target_date = sys.argv[1] if len(sys.argv) > 1 else (
+        datetime.date.today() - datetime.timedelta(days=1)
+    ).isoformat()
+    sync_one_day(target_date)
 
 
 if __name__ == "__main__":
