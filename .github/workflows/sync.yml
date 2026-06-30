@@ -3,7 +3,12 @@ name: Garmin -> Notion sync
 on:
   schedule:
     - cron: "0 4 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: "Скільки днів історії підтягнути (порожньо = тільки вчора)"
+        required: false
+        default: ""
 
 jobs:
   sync:
@@ -24,4 +29,10 @@ jobs:
           GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-        run: python sync.py
+          DAYS_BACK: ${{ github.event.inputs.days_back }}
+        run: |
+          if [ -n "$DAYS_BACK" ]; then
+            python sync.py --days-back "$DAYS_BACK"
+          else
+            python sync.py
+          fi
