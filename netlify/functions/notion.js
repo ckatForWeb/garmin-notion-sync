@@ -9,7 +9,7 @@ const NOTION_DB_ID = "ae75f432-077f-4c9e-a62c-aa1a6ff51a0e";
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, X-App-Secret",
 };
 
 function num(props, name) {
@@ -64,6 +64,12 @@ function pageToRow(page) {
 exports.handler = async function (event) {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: CORS_HEADERS, body: "" };
+  }
+
+  const APP_SHARED_SECRET = process.env.APP_SHARED_SECRET;
+  const providedSecret = event.headers["x-app-secret"] || event.headers["X-App-Secret"];
+  if (!APP_SHARED_SECRET || providedSecret !== APP_SHARED_SECRET) {
+    return { statusCode: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: "Unauthorized" }) };
   }
 
   const NOTION_TOKEN = process.env.NOTION_TOKEN;

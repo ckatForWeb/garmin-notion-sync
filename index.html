@@ -343,6 +343,11 @@
   // читає вже готові Morning brief / Evening brief / статуси — сама генерація
   // відбувається заздалегідь у GitHub Actions (morning.py о 8:00, evening.py о 19:00).
   const NOTION_PROXY_URL = "https://fascinating-puppy-c11d90.netlify.app/.netlify/functions/notion";
+  // Спільний секрет проти випадкового сканування endpoint'у ботами. Це НЕ повний
+  // захист — будь-хто, хто прочитає цей публічний код, побачить і секрет (він же
+  // не може бути справжньою таємницею в статичному HTML). Але це відсікає
+  // автоматичне сканування Netlify-піддоменів, яке не рендерить сторінку.
+  const APP_SECRET = "_MOLkaA9IRN4kogjX9srvcqppLsjDOfb";
 
   function el(id) { return document.getElementById(id); }
 
@@ -363,7 +368,9 @@
   // ---------- Notion (через Netlify-проксі) ----------
 
   async function fetchTodayRow() {
-    const resp = await fetch(NOTION_PROXY_URL);
+    const resp = await fetch(NOTION_PROXY_URL, {
+      headers: { "x-app-secret": APP_SECRET }
+    });
     if (!resp.ok) {
       const text = await resp.text();
       throw new Error("Notion proxy " + resp.status + ": " + text.slice(0, 300));
@@ -374,7 +381,7 @@
   async function saveContextToNotion(contextText) {
     const resp = await fetch(NOTION_PROXY_URL, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-app-secret": APP_SECRET },
       body: JSON.stringify({ type: "context", contextText: contextText })
     });
     if (!resp.ok) {
@@ -386,7 +393,7 @@
   async function saveEveningToNotion(payload) {
     const resp = await fetch(NOTION_PROXY_URL, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-app-secret": APP_SECRET },
       body: JSON.stringify(Object.assign({ type: "evening" }, payload))
     });
     if (!resp.ok) {
