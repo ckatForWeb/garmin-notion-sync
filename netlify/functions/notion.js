@@ -1,6 +1,7 @@
 // Проксі до Notion REST API. NOTION_TOKEN живе тільки тут (env var на Netlify),
 // у браузер ніколи не потрапляє.
-// GET  — забрати останні 3 рядки (для тренду стресу і вчорашніх вечірніх записів).
+// GET  — забрати сьогоднішній рядок (готові Morning/Evening brief + статуси
+//        генеруються заздалегідь server-side в morning.py/evening.py).
 // POST — зберегти або швидкий контекст (type: "context"), або вечірню форму (type: "evening").
 
 const NOTION_DB_ID = "ae75f432-077f-4c9e-a62c-aa1a6ff51a0e";
@@ -46,11 +47,17 @@ function pageToRow(page) {
     spo2_avg: num(props, "SpO2 avg"),
     spo2_low: num(props, "SpO2 low"),
     stress_avg: num(props, "Stress avg"),
+    steps: num(props, "Steps"),
     activities: text(props, "Activities"),
     evening_mood: num(props, "Evening mood"),
     evening_note: text(props, "Evening note"),
     movement_today: selectVal(props, "Movement today"),
     tomorrow_intention: text(props, "Tomorrow intention"),
+    morning_brief: text(props, "Morning brief"),
+    evening_brief: text(props, "Evening brief"),
+    sleep_status: text(props, "Sleep status"),
+    recovery_status: text(props, "Recovery status"),
+    readiness_status: text(props, "Readiness status"),
   };
 }
 
@@ -81,7 +88,7 @@ exports.handler = async function (event) {
         headers: notionHeaders,
         body: JSON.stringify({
           sorts: [{ property: "Day", direction: "descending" }],
-          page_size: 3,
+          page_size: 1,
         }),
       });
       if (!resp.ok) {
@@ -89,16 +96,15 @@ exports.handler = async function (event) {
         return { statusCode: resp.status, headers: CORS_HEADERS, body: t };
       }
       const data = await resp.json();
-      const pages = data.results || [];
-      if (!pages.length) {
+      const page = data.results && data.results[0];
+      if (!page) {
         return {
           statusCode: 404,
           headers: CORS_HEADERS,
           body: JSON.stringify({ error: "У базі ще немає жодного рядка" }),
         };
       }
-      const rows = pages.map(pageToRow);
-      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ rows: rows }) };
+      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(pageToRow(page)) };
     }
 
     if (event.httpMethod === "POST") {

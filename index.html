@@ -46,14 +46,6 @@
     font-size: 13px;
     color: var(--muted);
   }
-  .gear {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 18px;
-    color: var(--muted);
-    padding: 4px;
-  }
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -93,21 +85,11 @@
     line-height: 1.5;
     white-space: pre-wrap;
   }
-  .skeleton {
+  .muted-text {
     color: var(--muted);
     font-size: 14px;
   }
-  .question-box {
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-  }
-  .question-box p {
-    font-size: 14px;
-    font-weight: 500;
-    margin: 0 0 8px;
-  }
-  textarea, input[type=text], input[type=number], input[type=password], select {
+  textarea, input[type=text], input[type=number] {
     width: 100%;
     font-family: inherit;
     font-size: 14px;
@@ -131,15 +113,6 @@
     margin-top: 10px;
   }
   button.primary:disabled { opacity: 0.5; cursor: default; }
-  button.secondary {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 10px;
-    padding: 9px 12px;
-    font-size: 13px;
-    cursor: pointer;
-  }
   .details-toggle {
     background: none;
     border: none;
@@ -189,26 +162,6 @@
     font-weight: 500;
     margin-bottom: 6px;
   }
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    z-index: 50;
-  }
-  .modal {
-    background: var(--card);
-    width: 100%;
-    max-width: 480px;
-    border-radius: 18px 18px 0 0;
-    padding: 22px 18px 28px;
-    max-height: 88vh;
-    overflow-y: auto;
-  }
-  .modal h2 { margin: 0 0 4px; font-size: 18px; }
-  .modal .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
   .hidden { display: none !important; }
   .error-msg {
     color: var(--red);
@@ -291,62 +244,60 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <h1 id="greeting">Привіт</h1>
+      <h1 id="greeting">Привіт, Юрій!</h1>
       <div class="date" id="today-date"></div>
     </div>
-    <button class="gear" id="settings-btn" title="Налаштування">&#9881;</button>
   </header>
 
   <div class="segmented">
-    <button class="active" id="tab-morning">Ранок</button>
+    <button id="tab-morning">Ранок</button>
     <button id="tab-evening">Вечір</button>
   </div>
 
   <div id="morning-view">
-  <div class="card">
-    <div class="statuses">
-      <div class="status">
-        <div class="dot" id="dot-sleep"></div>
-        <span>Сон</span>
-      </div>
-      <div class="status">
-        <div class="dot" id="dot-recovery"></div>
-        <span>Відновлення</span>
-      </div>
-      <div class="status">
-        <div class="dot" id="dot-readiness"></div>
-        <span>Готовність</span>
+    <div class="card">
+      <div class="statuses">
+        <div class="status">
+          <div class="dot" id="dot-sleep"></div>
+          <span>Сон</span>
+        </div>
+        <div class="status">
+          <div class="dot" id="dot-recovery"></div>
+          <span>Відновлення</span>
+        </div>
+        <div class="status">
+          <div class="dot" id="dot-readiness"></div>
+          <span>Готовність</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div id="brief-text" class="brief-text skeleton">Аналізую дані...</div>
-    <div id="question-box" class="question-box hidden">
-      <p id="question-text"></p>
-      <textarea id="question-answer" placeholder="Напиши, що сталось..."></textarea>
-      <button class="primary" id="answer-submit">Врахувати відповідь</button>
+    <div class="card">
+      <div id="morning-brief-text" class="brief-text muted-text">Завантажую...</div>
     </div>
-  </div>
 
-  <button class="details-toggle" id="details-toggle">Детальніше ▾</button>
-  <div class="card hidden" id="details-card">
-    <div class="details-grid" id="details-grid"></div>
-  </div>
-
-  <div class="card">
-    <div class="chips" id="context-chips">
-      <div class="chip" data-tag="Тривога вночі">Тривога вночі</div>
-      <div class="chip" data-tag="Важкий робочий день">Важкий робочий день</div>
-      <div class="chip" data-tag="OPFOR виїзд">OPFOR виїзд</div>
+    <button class="details-toggle" id="details-toggle">Детальніше ▾</button>
+    <div class="card hidden" id="details-card">
+      <div class="details-grid" id="details-grid"></div>
     </div>
-    <textarea id="context-note" placeholder="Додаткова нотатка (необов'язково)"></textarea>
-    <button class="primary" id="save-context-btn">Зберегти контекст</button>
-    <div id="context-msg"></div>
-  </div>
+
+    <div class="card">
+      <div class="chips" id="context-chips">
+        <div class="chip" data-tag="Тривога вночі">Тривога вночі</div>
+        <div class="chip" data-tag="Важкий робочий день">Важкий робочий день</div>
+        <div class="chip" data-tag="OPFOR виїзд">OPFOR виїзд</div>
+      </div>
+      <textarea id="context-note" placeholder="Додаткова нотатка (необов'язково)"></textarea>
+      <button class="primary" id="save-context-btn">Зберегти контекст</button>
+      <div id="context-msg"></div>
+    </div>
   </div>
 
   <div id="evening-view" class="hidden">
+    <div class="card">
+      <div id="evening-brief-text" class="brief-text muted-text">Завантажую...</div>
+    </div>
+
     <div class="card">
       <div class="field">
         <label>Як пройшов день емоційно?</label>
@@ -381,231 +332,39 @@
   </div>
 </div>
 
-<div class="modal-overlay hidden" id="onboarding">
-  <div class="modal">
-    <h2>Налаштування</h2>
-    <div class="sub">Потрібно один раз — зберігається лише в цьому браузері.</div>
-
-    <div class="field">
-      <label>Ім'я</label>
-      <input type="text" id="f-name" placeholder="Юрій">
-    </div>
-    <div class="field">
-      <label>Тип роботи</label>
-      <select id="f-worktype">
-        <option value="сидяча">Сидяча</option>
-        <option value="активна">Активна</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Вік</label>
-      <input type="number" id="f-age" placeholder="30">
-    </div>
-    <div class="field">
-      <label>Ціль</label>
-      <select id="f-goal">
-        <option value="здоров'я">Здоров'я</option>
-        <option value="схуднення">Схуднення</option>
-        <option value="спорт">Спорт</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label>Anthropic API key</label>
-      <input type="password" id="f-anthropic" placeholder="sk-ant-...">
-    </div>
-    <div class="field">
-      <label>OpenWeatherMap API key</label>
-      <input type="password" id="f-weather" placeholder="...">
-    </div>
-
-    <button class="primary" id="save-onboarding-btn">Зберегти і продовжити</button>
-    <div id="onboarding-error" class="error-msg"></div>
-  </div>
-</div>
-
 <script>
 (function () {
   "use strict";
 
-  const KYIV_LAT = 50.4501;
-  const KYIV_LON = 30.5234;
-  const STORAGE_KEY = "healthbrief_config_v1";
-  const MODEL = "claude-sonnet-4-6";
-  // URL Netlify-функції, що проксіює Notion (тримає NOTION_TOKEN на сервері).
+  // Проксі до Notion (тримає NOTION_TOKEN на сервері Netlify). Фронтенд тільки
+  // читає вже готові Morning brief / Evening brief / статуси — сама генерація
+  // відбувається заздалегідь у GitHub Actions (morning.py о 8:00, evening.py о 19:00).
   const NOTION_PROXY_URL = "https://fascinating-puppy-c11d90.netlify.app/.netlify/functions/notion";
-
-  function loadConfig() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function saveConfig(cfg) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
-  }
-
-  let config = loadConfig();
 
   function el(id) { return document.getElementById(id); }
 
-  function showOnboarding(prefill) {
-    prefill = prefill || {};
-    el("f-name").value = prefill.name || "";
-    el("f-worktype").value = prefill.workType || "сидяча";
-    el("f-age").value = prefill.age || "";
-    el("f-goal").value = prefill.goal || "здоров'я";
-    el("f-anthropic").value = prefill.anthropicKey || "";
-    el("f-weather").value = prefill.weatherKey || "";
-    el("onboarding").classList.remove("hidden");
-  }
-
-  function hideOnboarding() {
-    el("onboarding").classList.add("hidden");
-  }
-
-  el("save-onboarding-btn").addEventListener("click", function () {
-    const name = el("f-name").value.trim();
-    const anthropicKey = el("f-anthropic").value.trim();
-    const weatherKey = el("f-weather").value.trim();
-
-    if (!name || !anthropicKey || !weatherKey) {
-      el("onboarding-error").textContent = "Заповни всі поля, будь ласка.";
-      return;
-    }
-
-    config = {
-      name: name,
-      workType: el("f-worktype").value,
-      age: el("f-age").value,
-      goal: el("f-goal").value,
-      anthropicKey: anthropicKey,
-      weatherKey: weatherKey
-    };
-    saveConfig(config);
-    hideOnboarding();
-    init();
-  });
-
-  el("settings-btn").addEventListener("click", function () {
-    showOnboarding(config || {});
-  });
-
   // ---------- Перемикач Ранок / Вечір ----------
 
-  el("tab-morning").addEventListener("click", function () {
-    el("tab-morning").classList.add("active");
-    el("tab-evening").classList.remove("active");
-    el("morning-view").classList.remove("hidden");
-    el("evening-view").classList.add("hidden");
-  });
-
-  el("tab-evening").addEventListener("click", function () {
-    el("tab-evening").classList.add("active");
-    el("tab-morning").classList.remove("active");
-    el("evening-view").classList.remove("hidden");
-    el("morning-view").classList.add("hidden");
-  });
-
-  // ---------- Weather ----------
-
-  async function getCurrentWeather(apiKey) {
-    const url = "https://api.openweathermap.org/data/2.5/weather?lat=" + KYIV_LAT +
-      "&lon=" + KYIV_LON + "&appid=" + encodeURIComponent(apiKey) + "&units=metric&lang=ua";
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error("OpenWeatherMap: " + resp.status);
-    const data = await resp.json();
-    return {
-      temp: data.main && data.main.temp,
-      feels_like: data.main && data.main.feels_like,
-      condition: data.weather && data.weather[0] && data.weather[0].description,
-      humidity: data.main && data.main.humidity
-    };
+  function setTab(mode) {
+    const isMorning = mode === "morning";
+    el("tab-morning").classList.toggle("active", isMorning);
+    el("tab-evening").classList.toggle("active", !isMorning);
+    el("morning-view").classList.toggle("hidden", !isMorning);
+    el("evening-view").classList.toggle("hidden", isMorning);
   }
 
-  // Історія (вчора 22:00) доступна лише на платному One Call 3.0 —
-  // якщо ключ не має підписки, тихо пропускаємо і використовуємо тільки поточну погоду.
-  async function getYesterdayEveningWeather(apiKey) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(22, 0, 0, 0);
-    const dt = Math.floor(yesterday.getTime() / 1000);
-    const url = "https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=" + KYIV_LAT +
-      "&lon=" + KYIV_LON + "&dt=" + dt + "&appid=" + encodeURIComponent(apiKey) + "&units=metric&lang=ua";
-    try {
-      const resp = await fetch(url);
-      if (!resp.ok) return null;
-      const data = await resp.json();
-      const point = data.data && data.data[0];
-      if (!point) return null;
-      return {
-        temp: point.temp,
-        condition: point.weather && point.weather[0] && point.weather[0].description
-      };
-    } catch (e) {
-      return null;
-    }
-  }
+  el("tab-morning").addEventListener("click", function () { setTab("morning"); });
+  el("tab-evening").addEventListener("click", function () { setTab("evening"); });
 
-  // ---------- Anthropic ----------
+  // ---------- Notion (через Netlify-проксі) ----------
 
-  async function callClaude(cfg, systemPrompt, userMessage) {
-    const body = {
-      model: MODEL,
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userMessage }]
-    };
-
-    const headers = {
-      "content-type": "application/json",
-      "x-api-key": cfg.anthropicKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true"
-    };
-
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify(body)
-    });
-
-    if (!resp.ok) {
-      const text = await resp.text();
-      throw new Error("Anthropic API " + resp.status + ": " + text.slice(0, 300));
-    }
-
-    const data = await resp.json();
-    const textBlocks = (data.content || []).filter(function (b) { return b.type === "text"; });
-    return textBlocks.map(function (b) { return b.text; }).join("\n").trim();
-  }
-
-  function extractJson(text) {
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      const match = text.match(/\{[\s\S]*\}/);
-      if (match) {
-        return JSON.parse(match[0]);
-      }
-      throw e;
-    }
-  }
-
-  // ---------- Notion (через Netlify-проксі, токен лишається на сервері) ----------
-
-  // Повертає останні до 3 рядків (сьогодні + попередні дні) — потрібно для
-  // тренду стресу і вчорашніх вечірніх нотаток.
-  async function fetchRecentNotionRows() {
+  async function fetchTodayRow() {
     const resp = await fetch(NOTION_PROXY_URL);
     if (!resp.ok) {
       const text = await resp.text();
       throw new Error("Notion proxy " + resp.status + ": " + text.slice(0, 300));
     }
-    const data = await resp.json();
-    return data.rows || [];
+    return resp.json();
   }
 
   async function saveContextToNotion(contextText) {
@@ -632,7 +391,7 @@
     }
   }
 
-  // ---------- Основний брифінг ----------
+  // ---------- Рендер ----------
 
   const STATUS_COLORS = ["green", "yellow", "red"];
 
@@ -657,8 +416,8 @@
       ["REM сон, хв", row.rem_sleep_min],
       ["Легкий сон, хв", row.light_sleep_min],
       ["SpO2 avg", row.spo2_avg],
-      ["SpO2 low", row.spo2_low],
       ["Стрес", row.stress_avg],
+      ["Кроки", row.steps],
       ["Тренування", row.activities || "—"]
     ];
     const grid = el("details-grid");
@@ -672,116 +431,35 @@
     });
   }
 
-  let lastRow = null;
-  let lastWeather = null;
-  let lastBrief = null;
-  let lastRecentRows = [];
-  let lastYesterdayRow = null;
+  function renderMorning(row) {
+    if (row.sleep_status) setDot("dot-sleep", row.sleep_status);
+    if (row.recovery_status) setDot("dot-recovery", row.recovery_status);
+    if (row.readiness_status) setDot("dot-readiness", row.readiness_status);
 
-  function briefSystemPrompt(cfg) {
-    return "Ти персональний health-тренер користувача на ім'я " + cfg.name + ". " +
-      "Говориш українською на 'ти', коротко і по суті, без медичного жаргону і без вибачень. " +
-      "Користувач: вік " + (cfg.age || "невідомий") + ", тип роботи — " + cfg.workType +
-      ", ціль — " + cfg.goal + ". " +
-      "Враховуй погоду і тип роботи, коли даєш пораду. " +
-      "Стрес (stress_avg) інтерпретуй так: <25 — низький, все добре; 25-50 — середній, це норма; " +
-      "50+ — підвищений, обов'язково згадай це в пораді. " +
-      "Якщо в даних передано elevated_stress_streak: true — це означає підвищений стрес (50+) " +
-      "два або більше днів поспіль; в такому разі ОБОВ'ЯЗКОВО окремо наголоси в summary, що " +
-      "кілька днів поспіль підвищений стрес і сьогодні важливо не додавати навантаження. " +
-      "Якщо передано yesterday_evening_note або yesterday_tomorrow_intention — врахуй їх у " +
-      "пораді (наприклад, якщо вчора користувач писав що було важко на роботі, порадь не " +
-      "перевантажувати себе додатково сьогодні). " +
-      "Відповідай ЛИШЕ JSON без жодного тексту навколо у форматі: " +
-      '{"sleep_status": "green|yellow|red", "recovery_status": "green|yellow|red", ' +
-      '"readiness_status": "green|yellow|red", "summary": "один абзац: що відбувається з тілом, ' +
-      'чому (з урахуванням погоди), і одна конкретна порада на сьогодні", ' +
-      '"clarifying_question": "питання, якщо якийсь показник аномальний, інакше null"}';
-  }
-
-  // Підвищений стрес (50+) два або більше дні поспіль, починаючи з найсвіжішого рядка.
-  function hasElevatedStressStreak(rows) {
-    let streak = 0;
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i].stress_avg != null && rows[i].stress_avg >= 50) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-    return streak >= 2;
-  }
-
-  function buildUserMessage(row, weather, recentRows, yesterdayRow, extraContext) {
-    let msg = "Дані Garmin за останній день:\n" + JSON.stringify(row) + "\n\n" +
-      "Погода в Києві зараз:\n" + JSON.stringify(weather.current) + "\n";
-    if (weather.yesterdayEvening) {
-      msg += "Погода вчора о 22:00:\n" + JSON.stringify(weather.yesterdayEvening) + "\n";
-    }
-    if (recentRows && recentRows.length) {
-      msg += "\nІсторія стресу (останні дні, найсвіжіший перший):\n" +
-        JSON.stringify(recentRows.map(function (r) { return { date: r.date, stress_avg: r.stress_avg }; })) + "\n";
-      msg += "elevated_stress_streak: " + hasElevatedStressStreak(recentRows) + "\n";
-    }
-    if (yesterdayRow && (yesterdayRow.evening_note || yesterdayRow.tomorrow_intention)) {
-      if (yesterdayRow.evening_note) {
-        msg += "yesterday_evening_note: " + JSON.stringify(yesterdayRow.evening_note) + "\n";
-      }
-      if (yesterdayRow.tomorrow_intention) {
-        msg += "yesterday_tomorrow_intention: " + JSON.stringify(yesterdayRow.tomorrow_intention) + "\n";
-      }
-    }
-    if (extraContext) {
-      msg += "\nДодатковий контекст від користувача:\n" + extraContext + "\n";
-    }
-    return msg;
-  }
-
-  function renderBrief(brief) {
-    setDot("dot-sleep", brief.sleep_status);
-    setDot("dot-recovery", brief.recovery_status);
-    setDot("dot-readiness", brief.readiness_status);
-    el("brief-text").textContent = brief.summary;
-    el("brief-text").classList.remove("skeleton");
-
-    if (brief.clarifying_question) {
-      el("question-text").textContent = brief.clarifying_question;
-      el("question-box").classList.remove("hidden");
+    const briefEl = el("morning-brief-text");
+    if (row.morning_brief) {
+      briefEl.textContent = row.morning_brief;
+      briefEl.classList.remove("muted-text");
     } else {
-      el("question-box").classList.add("hidden");
+      briefEl.textContent = "Ранковий брифінг ще не згенеровано — з'явиться о 8:00.";
+      briefEl.classList.add("muted-text");
+    }
+
+    renderDetails(row);
+  }
+
+  function renderEvening(row) {
+    const briefEl = el("evening-brief-text");
+    if (row.evening_brief) {
+      briefEl.textContent = row.evening_brief;
+      briefEl.classList.remove("muted-text");
+    } else {
+      briefEl.textContent = "Вечірній підсумок з'явиться о 19:00.";
+      briefEl.classList.add("muted-text");
     }
   }
 
-  el("answer-submit").addEventListener("click", async function () {
-    const answer = el("question-answer").value.trim();
-    if (!answer || !lastRow || !lastWeather) return;
-    el("answer-submit").disabled = true;
-    el("brief-text").textContent = "Оновлюю пораду...";
-    el("brief-text").classList.add("skeleton");
-    try {
-      const extra = "Питання було: '" + (lastBrief.clarifying_question || "") +
-        "'. Відповідь користувача: '" + answer + "'. Врахуй це у новій пораді.";
-      const userMessage = buildUserMessage(lastRow, lastWeather, lastRecentRows, lastYesterdayRow, extra);
-      const text = await callClaude(config, briefSystemPrompt(config), userMessage);
-      lastBrief = extractJson(text);
-      renderBrief(lastBrief);
-      el("question-box").classList.add("hidden");
-    } catch (e) {
-      el("brief-text").textContent = "Помилка оновлення поради: " + e.message;
-      el("brief-text").classList.remove("skeleton");
-    } finally {
-      el("answer-submit").disabled = false;
-    }
-  });
-
-  el("details-toggle").addEventListener("click", function () {
-    const card = el("details-card");
-    const collapsed = card.classList.contains("hidden");
-    card.classList.toggle("hidden");
-    el("details-toggle").textContent = collapsed ? "Детальніше ▴" : "Детальніше ▾";
-  });
-
-  // ---------- Швидкий контекст ----------
+  // ---------- Швидкий контекст (ранок) ----------
 
   let activeTags = new Set();
   document.querySelectorAll(".chip").forEach(function (chip) {
@@ -825,7 +503,7 @@
     }
   });
 
-  // ---------- Вечірня форма ----------
+  // ---------- Вечірня форма рефлексії ----------
 
   let selectedMood = null;
   document.querySelectorAll(".mood-btn").forEach(function (btn) {
@@ -879,10 +557,16 @@
     }
   });
 
+  el("details-toggle").addEventListener("click", function () {
+    const card = el("details-card");
+    const collapsed = card.classList.contains("hidden");
+    card.classList.toggle("hidden");
+    el("details-toggle").textContent = collapsed ? "Детальніше ▴" : "Детальніше ▾";
+  });
+
   // ---------- Ініціалізація ----------
 
   function renderGreetingDate() {
-    el("greeting").textContent = "Привіт" + (config && config.name ? ", " + config.name : "") + "!";
     const now = new Date();
     el("today-date").textContent = now.toLocaleDateString("uk-UA", {
       weekday: "long", day: "numeric", month: "long"
@@ -891,38 +575,20 @@
 
   async function init() {
     renderGreetingDate();
-    el("brief-text").textContent = "Аналізую дані...";
-    el("brief-text").classList.add("skeleton");
+    setTab(new Date().getHours() < 15 ? "morning" : "evening");
 
     try {
-      const [rows, current, yesterdayEvening] = await Promise.all([
-        fetchRecentNotionRows(),
-        getCurrentWeather(config.weatherKey),
-        getYesterdayEveningWeather(config.weatherKey)
-      ]);
-
-      const row = rows[0];
-      lastRow = row;
-      lastRecentRows = rows;
-      lastYesterdayRow = rows[1] || null;
-      lastWeather = { current: current, yesterdayEvening: yesterdayEvening };
-      renderDetails(row);
-
-      const userMessage = buildUserMessage(row, lastWeather, lastRecentRows, lastYesterdayRow, null);
-      const briefText = await callClaude(config, briefSystemPrompt(config), userMessage);
-      lastBrief = extractJson(briefText);
-      renderBrief(lastBrief);
+      const row = await fetchTodayRow();
+      renderMorning(row);
+      renderEvening(row);
     } catch (e) {
-      el("brief-text").textContent = "Помилка завантаження: " + e.message;
-      el("brief-text").classList.remove("skeleton");
+      const message = "Помилка завантаження: " + e.message;
+      el("morning-brief-text").textContent = message;
+      el("evening-brief-text").textContent = message;
     }
   }
 
-  if (!config) {
-    showOnboarding({});
-  } else {
-    init();
-  }
+  init();
 })();
 </script>
 
