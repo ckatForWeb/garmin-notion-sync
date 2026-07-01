@@ -1,5 +1,7 @@
 // Проксі до Notion REST API. NOTION_TOKEN живе тільки тут (env var на Netlify),
-// у браузер ніколи не потрапляє. GET — забрати останній рядок, POST — зберегти контекст.
+// у браузер ніколи не потрапляє.
+// GET  — забрати останні 3 рядки (для тренду стресу і вчорашніх вечірніх записів).
+// POST — зберегти або швидкий контекст (type: "context"), або вечірню форму (type: "evening").
 
 const NOTION_DB_ID = "ae75f432-077f-4c9e-a62c-aa1a6ff51a0e";
 
@@ -20,6 +22,36 @@ function text(props, name) {
   if (p.rich_text && p.rich_text.length) return p.rich_text.map((t) => t.plain_text).join("");
   if (p.title && p.title.length) return p.title.map((t) => t.plain_text).join("");
   return null;
+}
+
+function selectVal(props, name) {
+  const p = props[name];
+  return p && p.select ? p.select.name : null;
+}
+
+function pageToRow(page) {
+  const props = page.properties;
+  return {
+    date: props["Day"] && props["Day"].date ? props["Day"].date.start : null,
+    sleep_score: num(props, "Sleep score"),
+    sleep_hours: num(props, "Sleep hours"),
+    hrv_avg: num(props, "HRV avg"),
+    hrv_status: text(props, "HRV status"),
+    body_battery_high: num(props, "Body Battery high"),
+    body_battery_low: num(props, "Body Battery low"),
+    resting_hr: num(props, "Resting HR"),
+    deep_sleep_min: num(props, "Deep sleep min"),
+    rem_sleep_min: num(props, "REM sleep min"),
+    light_sleep_min: num(props, "Light sleep min"),
+    spo2_avg: num(props, "SpO2 avg"),
+    spo2_low: num(props, "SpO2 low"),
+    stress_avg: num(props, "Stress avg"),
+    activities: text(props, "Activities"),
+    evening_mood: num(props, "Evening mood"),
+    evening_note: text(props, "Evening note"),
+    movement_today: selectVal(props, "Movement today"),
+    tomorrow_intention: text(props, "Tomorrow intention"),
+  };
 }
 
 exports.handler = async function (event) {
@@ -49,7 +81,7 @@ exports.handler = async function (event) {
         headers: notionHeaders,
         body: JSON.stringify({
           sorts: [{ property: "Day", direction: "descending" }],
-          page_size: 1,
+          page_size: 3,
         }),
       });
       if (!resp.ok) {
@@ -57,38 +89,20 @@ exports.handler = async function (event) {
         return { statusCode: resp.status, headers: CORS_HEADERS, body: t };
       }
       const data = await resp.json();
-      const page = data.results && data.results[0];
-      if (!page) {
+      const pages = data.results || [];
+      if (!pages.length) {
         return {
           statusCode: 404,
           headers: CORS_HEADERS,
           body: JSON.stringify({ error: "У базі ще немає жодного рядка" }),
         };
       }
-      const props = page.properties;
-      const row = {
-        date: props["Day"] && props["Day"].date ? props["Day"].date.start : null,
-        sleep_score: num(props, "Sleep score"),
-        sleep_hours: num(props, "Sleep hours"),
-        hrv_avg: num(props, "HRV avg"),
-        hrv_status: text(props, "HRV status"),
-        body_battery_high: num(props, "Body Battery high"),
-        body_battery_low: num(props, "Body Battery low"),
-        resting_hr: num(props, "Resting HR"),
-        deep_sleep_min: num(props, "Deep sleep min"),
-        rem_sleep_min: num(props, "REM sleep min"),
-        light_sleep_min: num(props, "Light sleep min"),
-        spo2_avg: num(props, "SpO2 avg"),
-        spo2_low: num(props, "SpO2 low"),
-        stress_avg: num(props, "Stress avg"),
-        activities: text(props, "Activities"),
-      };
-      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(row) };
+      const rows = pages.map(pageToRow);
+      return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ rows: rows }) };
     }
 
     if (event.httpMethod === "POST") {
       const payload = JSON.parse(event.body || "{}");
-      const contextText = String(payload.contextText || "").slice(0, 1900);
       const today = new Date().toISOString().slice(0, 10);
 
       const queryResp = await fetch("https://api.notion.com/v1/databases/" + NOTION_DB_ID + "/query", {
@@ -103,9 +117,21 @@ exports.handler = async function (event) {
       const queryData = await queryResp.json();
       const existing = queryData.results && queryData.results[0];
 
-      const properties = {
-        "Context notes": { rich_text: [{ text: { content: contextText } }] },
-      };
+      let properties;
+      if (payload.type === "evening") {
+        const mood = Number(payload.mood);
+        properties = {
+          "Evening mood": { number: Number.isFinite(mood) ? mood : null },
+          "Evening note": { rich_text: [{ text: { content: String(payload.note || "").slice(0, 1900) } }] },
+          "Movement today": payload.movement ? { select: { name: payload.movement } } : { select: null },
+          "Tomorrow intention": {
+            rich_text: [{ text: { content: String(payload.tomorrowIntention || "").slice(0, 1900) } }],
+          },
+        };
+      } else {
+        const contextText = String(payload.contextText || "").slice(0, 1900);
+        properties = { "Context notes": { rich_text: [{ text: { content: contextText } }] } };
+      }
 
       let saveResp;
       if (existing) {

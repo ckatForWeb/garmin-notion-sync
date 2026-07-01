@@ -220,6 +220,70 @@
     font-size: 13px;
     margin-top: 8px;
   }
+  .segmented {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 18px;
+  }
+  .segmented button {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .segmented button.active {
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .mood-scale {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .mood-btn {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 15px;
+  }
+  .mood-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .movement-options {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .movement-btn {
+    flex: 1;
+    padding: 9px 0;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .movement-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
 </style>
 </head>
 <body>
@@ -233,6 +297,12 @@
     <button class="gear" id="settings-btn" title="Налаштування">&#9881;</button>
   </header>
 
+  <div class="segmented">
+    <button class="active" id="tab-morning">Ранок</button>
+    <button id="tab-evening">Вечір</button>
+  </div>
+
+  <div id="morning-view">
   <div class="card">
     <div class="statuses">
       <div class="status">
@@ -273,6 +343,41 @@
     <textarea id="context-note" placeholder="Додаткова нотатка (необов'язково)"></textarea>
     <button class="primary" id="save-context-btn">Зберегти контекст</button>
     <div id="context-msg"></div>
+  </div>
+  </div>
+
+  <div id="evening-view" class="hidden">
+    <div class="card">
+      <div class="field">
+        <label>Як пройшов день емоційно?</label>
+        <div class="mood-scale" id="mood-scale">
+          <div class="mood-btn" data-mood="1">1</div>
+          <div class="mood-btn" data-mood="2">2</div>
+          <div class="mood-btn" data-mood="3">3</div>
+          <div class="mood-btn" data-mood="4">4</div>
+          <div class="mood-btn" data-mood="5">5</div>
+        </div>
+        <textarea id="evening-mood-note" placeholder="Коротко чому (необов'язково)"></textarea>
+      </div>
+      <div class="field">
+        <label>Що було найважчим сьогодні?</label>
+        <textarea id="evening-hardest" placeholder="..."></textarea>
+      </div>
+      <div class="field">
+        <label>Чи рухався сьогодні?</label>
+        <div class="movement-options" id="movement-options">
+          <div class="movement-btn" data-movement="Так">Так</div>
+          <div class="movement-btn" data-movement="Трохи">Трохи</div>
+          <div class="movement-btn" data-movement="Ні">Ні</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Що хочеш від завтра?</label>
+        <textarea id="evening-tomorrow" placeholder="..."></textarea>
+      </div>
+      <button class="primary" id="save-evening-btn">Зберегти вечір</button>
+      <div id="evening-msg"></div>
+    </div>
   </div>
 </div>
 
@@ -388,6 +493,22 @@
     showOnboarding(config || {});
   });
 
+  // ---------- Перемикач Ранок / Вечір ----------
+
+  el("tab-morning").addEventListener("click", function () {
+    el("tab-morning").classList.add("active");
+    el("tab-evening").classList.remove("active");
+    el("morning-view").classList.remove("hidden");
+    el("evening-view").classList.add("hidden");
+  });
+
+  el("tab-evening").addEventListener("click", function () {
+    el("tab-evening").classList.add("active");
+    el("tab-morning").classList.remove("active");
+    el("evening-view").classList.remove("hidden");
+    el("morning-view").classList.add("hidden");
+  });
+
   // ---------- Weather ----------
 
   async function getCurrentWeather(apiKey) {
@@ -475,20 +596,35 @@
 
   // ---------- Notion (через Netlify-проксі, токен лишається на сервері) ----------
 
-  async function fetchLatestNotionRow() {
+  // Повертає останні до 3 рядків (сьогодні + попередні дні) — потрібно для
+  // тренду стресу і вчорашніх вечірніх нотаток.
+  async function fetchRecentNotionRows() {
     const resp = await fetch(NOTION_PROXY_URL);
     if (!resp.ok) {
       const text = await resp.text();
       throw new Error("Notion proxy " + resp.status + ": " + text.slice(0, 300));
     }
-    return resp.json();
+    const data = await resp.json();
+    return data.rows || [];
   }
 
   async function saveContextToNotion(contextText) {
     const resp = await fetch(NOTION_PROXY_URL, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ contextText: contextText })
+      body: JSON.stringify({ type: "context", contextText: contextText })
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error("Notion proxy " + resp.status + ": " + text.slice(0, 300));
+    }
+  }
+
+  async function saveEveningToNotion(payload) {
+    const resp = await fetch(NOTION_PROXY_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(Object.assign({ type: "evening" }, payload))
     });
     if (!resp.ok) {
       const text = await resp.text();
@@ -539,6 +675,8 @@
   let lastRow = null;
   let lastWeather = null;
   let lastBrief = null;
+  let lastRecentRows = [];
+  let lastYesterdayRow = null;
 
   function briefSystemPrompt(cfg) {
     return "Ти персональний health-тренер користувача на ім'я " + cfg.name + ". " +
@@ -546,6 +684,14 @@
       "Користувач: вік " + (cfg.age || "невідомий") + ", тип роботи — " + cfg.workType +
       ", ціль — " + cfg.goal + ". " +
       "Враховуй погоду і тип роботи, коли даєш пораду. " +
+      "Стрес (stress_avg) інтерпретуй так: <25 — низький, все добре; 25-50 — середній, це норма; " +
+      "50+ — підвищений, обов'язково згадай це в пораді. " +
+      "Якщо в даних передано elevated_stress_streak: true — це означає підвищений стрес (50+) " +
+      "два або більше днів поспіль; в такому разі ОБОВ'ЯЗКОВО окремо наголоси в summary, що " +
+      "кілька днів поспіль підвищений стрес і сьогодні важливо не додавати навантаження. " +
+      "Якщо передано yesterday_evening_note або yesterday_tomorrow_intention — врахуй їх у " +
+      "пораді (наприклад, якщо вчора користувач писав що було важко на роботі, порадь не " +
+      "перевантажувати себе додатково сьогодні). " +
       "Відповідай ЛИШЕ JSON без жодного тексту навколо у форматі: " +
       '{"sleep_status": "green|yellow|red", "recovery_status": "green|yellow|red", ' +
       '"readiness_status": "green|yellow|red", "summary": "один абзац: що відбувається з тілом, ' +
@@ -553,11 +699,37 @@
       '"clarifying_question": "питання, якщо якийсь показник аномальний, інакше null"}';
   }
 
-  function buildUserMessage(row, weather, extraContext) {
+  // Підвищений стрес (50+) два або більше дні поспіль, починаючи з найсвіжішого рядка.
+  function hasElevatedStressStreak(rows) {
+    let streak = 0;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].stress_avg != null && rows[i].stress_avg >= 50) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak >= 2;
+  }
+
+  function buildUserMessage(row, weather, recentRows, yesterdayRow, extraContext) {
     let msg = "Дані Garmin за останній день:\n" + JSON.stringify(row) + "\n\n" +
       "Погода в Києві зараз:\n" + JSON.stringify(weather.current) + "\n";
     if (weather.yesterdayEvening) {
       msg += "Погода вчора о 22:00:\n" + JSON.stringify(weather.yesterdayEvening) + "\n";
+    }
+    if (recentRows && recentRows.length) {
+      msg += "\nІсторія стресу (останні дні, найсвіжіший перший):\n" +
+        JSON.stringify(recentRows.map(function (r) { return { date: r.date, stress_avg: r.stress_avg }; })) + "\n";
+      msg += "elevated_stress_streak: " + hasElevatedStressStreak(recentRows) + "\n";
+    }
+    if (yesterdayRow && (yesterdayRow.evening_note || yesterdayRow.tomorrow_intention)) {
+      if (yesterdayRow.evening_note) {
+        msg += "yesterday_evening_note: " + JSON.stringify(yesterdayRow.evening_note) + "\n";
+      }
+      if (yesterdayRow.tomorrow_intention) {
+        msg += "yesterday_tomorrow_intention: " + JSON.stringify(yesterdayRow.tomorrow_intention) + "\n";
+      }
     }
     if (extraContext) {
       msg += "\nДодатковий контекст від користувача:\n" + extraContext + "\n";
@@ -589,7 +761,7 @@
     try {
       const extra = "Питання було: '" + (lastBrief.clarifying_question || "") +
         "'. Відповідь користувача: '" + answer + "'. Врахуй це у новій пораді.";
-      const userMessage = buildUserMessage(lastRow, lastWeather, extra);
+      const userMessage = buildUserMessage(lastRow, lastWeather, lastRecentRows, lastYesterdayRow, extra);
       const text = await callClaude(config, briefSystemPrompt(config), userMessage);
       lastBrief = extractJson(text);
       renderBrief(lastBrief);
@@ -653,6 +825,60 @@
     }
   });
 
+  // ---------- Вечірня форма ----------
+
+  let selectedMood = null;
+  document.querySelectorAll(".mood-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      selectedMood = btn.getAttribute("data-mood");
+      document.querySelectorAll(".mood-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+    });
+  });
+
+  let selectedMovement = null;
+  document.querySelectorAll(".movement-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      selectedMovement = btn.getAttribute("data-movement");
+      document.querySelectorAll(".movement-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+    });
+  });
+
+  el("save-evening-btn").addEventListener("click", async function () {
+    if (!selectedMood) {
+      el("evening-msg").textContent = "Обери оцінку дня (1-5).";
+      el("evening-msg").className = "error-msg";
+      return;
+    }
+    const moodNote = el("evening-mood-note").value.trim();
+    const hardest = el("evening-hardest").value.trim();
+    const tomorrow = el("evening-tomorrow").value.trim();
+    const noteParts = [];
+    if (moodNote) noteParts.push("Настрій: " + moodNote);
+    if (hardest) noteParts.push("Найважче: " + hardest);
+
+    el("save-evening-btn").disabled = true;
+    el("evening-msg").textContent = "Зберігаю...";
+    el("evening-msg").className = "";
+
+    try {
+      await saveEveningToNotion({
+        mood: Number(selectedMood),
+        note: noteParts.join(". "),
+        movement: selectedMovement,
+        tomorrowIntention: tomorrow
+      });
+      el("evening-msg").textContent = "Збережено в Notion.";
+      el("evening-msg").className = "saved-msg";
+    } catch (e) {
+      el("evening-msg").textContent = "Помилка: " + e.message;
+      el("evening-msg").className = "error-msg";
+    } finally {
+      el("save-evening-btn").disabled = false;
+    }
+  });
+
   // ---------- Ініціалізація ----------
 
   function renderGreetingDate() {
@@ -669,17 +895,20 @@
     el("brief-text").classList.add("skeleton");
 
     try {
-      const [row, current, yesterdayEvening] = await Promise.all([
-        fetchLatestNotionRow(),
+      const [rows, current, yesterdayEvening] = await Promise.all([
+        fetchRecentNotionRows(),
         getCurrentWeather(config.weatherKey),
         getYesterdayEveningWeather(config.weatherKey)
       ]);
 
+      const row = rows[0];
       lastRow = row;
+      lastRecentRows = rows;
+      lastYesterdayRow = rows[1] || null;
       lastWeather = { current: current, yesterdayEvening: yesterdayEvening };
       renderDetails(row);
 
-      const userMessage = buildUserMessage(row, lastWeather, null);
+      const userMessage = buildUserMessage(row, lastWeather, lastRecentRows, lastYesterdayRow, null);
       const briefText = await callClaude(config, briefSystemPrompt(config), userMessage);
       lastBrief = extractJson(briefText);
       renderBrief(lastBrief);
