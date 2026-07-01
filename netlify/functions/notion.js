@@ -1,7 +1,7 @@
 // Проксі до Notion REST API. NOTION_TOKEN живе тільки тут (env var на Netlify),
 // у браузер ніколи не потрапляє. GET — забрати останній рядок, POST — зберегти контекст.
 
-const NOTION_DB_ID = "ba792d8a-4507-4ded-a07f-702d3920c613";
+const NOTION_DB_ID = "ae75f432-077f-4c9e-a62c-aa1a6ff51a0e";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
