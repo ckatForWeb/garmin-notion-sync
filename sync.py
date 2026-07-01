@@ -1,8 +1,8 @@
 """
 Garmin -> Notion daily sync.
 
-Тягне за вчорашній день: сон (зокрема фази), HRV, Body Battery, тренування
-(з деталями), кроки, пульс спокою, SpO2.
+Тягне за сьогодні (Garmin записує нічний сон поточною датою): сон (зокрема фази),
+HRV, Body Battery, тренування (з деталями), кроки, пульс спокою, SpO2.
 Пише один рядок у Notion-базу (по даті). Якщо рядок за цю дату вже є — оновлює його.
 
 Потрібні secrets (env vars):
@@ -180,13 +180,11 @@ def main():
         days_back = int(sys.argv[2])
         today = datetime.date.today()
         for i in range(days_back, 0, -1):
-            target_date = (today - datetime.timedelta(days=i)).isoformat()
+            target_date = (today - datetime.timedelta(days=i - 1)).isoformat()
             sync_one_day(target_date)
         return
 
-    target_date = sys.argv[1] if len(sys.argv) > 1 else (
-        datetime.date.today() - datetime.timedelta(days=1)
-    ).isoformat()
+    target_date = sys.argv[1] if len(sys.argv) > 1 else datetime.date.today().isoformat()
     sync_one_day(target_date)
 
 

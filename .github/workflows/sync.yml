@@ -2,11 +2,11 @@ name: Garmin -> Notion sync
 
 on:
   schedule:
-    - cron: "0 4 * * *"
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       days_back:
-        description: "Скільки днів історії підтягнути (порожньо = тільки вчора)"
+        description: "Скільки днів історії підтягнути (порожньо = тільки сьогодні)"
         required: false
         default: ""
 
