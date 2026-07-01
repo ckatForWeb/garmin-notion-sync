@@ -310,10 +310,6 @@
       <input type="password" id="f-anthropic" placeholder="sk-ant-...">
     </div>
     <div class="field">
-      <label>Notion token</label>
-      <input type="password" id="f-notion" placeholder="secret_...">
-    </div>
-    <div class="field">
       <label>OpenWeatherMap API key</label>
       <input type="password" id="f-weather" placeholder="...">
     </div>
@@ -327,11 +323,13 @@
 (function () {
   "use strict";
 
-  const NOTION_DB_ID = "ba792d8a-4507-4ded-a07f-702d3920c613";
   const KYIV_LAT = 50.4501;
   const KYIV_LON = 30.5234;
   const STORAGE_KEY = "healthbrief_config_v1";
   const MODEL = "claude-sonnet-4-6";
+  // URL Netlify-функції, що проксіює Notion (тримає NOTION_TOKEN на сервері).
+  // Заповнюється після деплою на Netlify (Site settings -> Functions -> URL сайту).
+  const NOTION_PROXY_URL = "https://garmin-notion-sync.netlify.app/.netlify/functions/notion";
 
   function loadConfig() {
     try {
@@ -356,7 +354,6 @@
     el("f-age").value = prefill.age || "";
     el("f-goal").value = prefill.goal || "здоров'я";
     el("f-anthropic").value = prefill.anthropicKey || "";
-    el("f-notion").value = prefill.notionToken || "";
     el("f-weather").value = prefill.weatherKey || "";
     el("onboarding").classList.remove("hidden");
   }
@@ -368,10 +365,9 @@
   el("save-onboarding-btn").addEventListener("click", function () {
     const name = el("f-name").value.trim();
     const anthropicKey = el("f-anthropic").value.trim();
-    const notionToken = el("f-notion").value.trim();
     const weatherKey = el("f-weather").value.trim();
 
-    if (!name || !anthropicKey || !notionToken || !weatherKey) {
+    if (!name || !anthropicKey || !weatherKey) {
       el("onboarding-error").textContent = "Заповни всі поля, будь ласка.";
       return;
     }
@@ -382,7 +378,6 @@
       age: el("f-age").value,
       goal: el("f-goal").value,
       anthropicKey: anthropicKey,
-      notionToken: notionToken,
       weatherKey: weatherKey
     };
     saveConfig(config);
@@ -434,23 +429,15 @@
     }
   }
 
-  // ---------- Anthropic (з MCP-конектором до Notion) ----------
+  // ---------- Anthropic ----------
 
-  async function callClaude(cfg, systemPrompt, userMessage, useNotionMcp) {
+  async function callClaude(cfg, systemPrompt, userMessage) {
     const body = {
       model: MODEL,
       max_tokens: 1024,
       system: systemPrompt,
       messages: [{ role: "user", content: userMessage }]
     };
-    if (useNotionMcp) {
-      body.mcp_servers = [{
-        type: "url",
-        url: "https://mcp.notion.com/mcp",
-        name: "notion",
-        authorization_token: cfg.notionToken
-      }];
-    }
 
     const headers = {
       "content-type": "application/json",
@@ -458,9 +445,6 @@
       "anthropic-version": "2023-06-01",
       "anthropic-dangerous-direct-browser-access": "true"
     };
-    if (useNotionMcp) {
-      headers["anthropic-beta"] = "mcp-client-2025-04-04";
-    }
 
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -490,19 +474,27 @@
     }
   }
 
-  async function fetchLatestNotionRow(cfg) {
-    const system = "Ти працюєш виключно з інструментами Notion MCP. Твоє єдине завдання: " +
-      "запросити базу даних Notion з ID " + NOTION_DB_ID + ", відсортувати рядки за полем " +
-      "'Day' у спадному порядку, взяти перший (найсвіжіший) рядок і повернути ЛИШЕ raw JSON " +
-      "об'єкт без жодного тексту навколо, markdown-обгортки чи пояснень. Формат JSON, ключі " +
-      "рівно такі (число або null, для activities і hrv_status — рядок або null):\n" +
-      '{"date": "...", "sleep_score": 0, "sleep_hours": 0, "hrv_avg": 0, "hrv_status": "...", ' +
-      '"body_battery_high": 0, "body_battery_low": 0, "resting_hr": 0, "deep_sleep_min": 0, ' +
-      '"rem_sleep_min": 0, "light_sleep_min": 0, "spo2_avg": 0, "spo2_low": 0, "stress_avg": 0, ' +
-      '"activities": "..."}';
+  // ---------- Notion (через Netlify-проксі, токен лишається на сервері) ----------
 
-    const text = await callClaude(cfg, system, "Виконай завдання і поверни JSON.", true);
-    return extractJson(text);
+  async function fetchLatestNotionRow() {
+    const resp = await fetch(NOTION_PROXY_URL);
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error("Notion proxy " + resp.status + ": " + text.slice(0, 300));
+    }
+    return resp.json();
+  }
+
+  async function saveContextToNotion(contextText) {
+    const resp = await fetch(NOTION_PROXY_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ contextText: contextText })
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error("Notion proxy " + resp.status + ": " + text.slice(0, 300));
+    }
   }
 
   // ---------- Основний брифінг ----------
@@ -599,7 +591,7 @@
       const extra = "Питання було: '" + (lastBrief.clarifying_question || "") +
         "'. Відповідь користувача: '" + answer + "'. Врахуй це у новій пораді.";
       const userMessage = buildUserMessage(lastRow, lastWeather, extra);
-      const text = await callClaude(config, briefSystemPrompt(config), userMessage, false);
+      const text = await callClaude(config, briefSystemPrompt(config), userMessage);
       lastBrief = extractJson(text);
       renderBrief(lastBrief);
       el("question-box").classList.add("hidden");
@@ -648,20 +640,14 @@
     el("context-msg").className = "";
 
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      const system = "Ти працюєш виключно з інструментами Notion MCP. Знайди в базі даних " +
-        NOTION_DB_ID + " рядок, де властивість 'Day' дорівнює " + today + ". Онови (або створи, " +
-        "якщо такого рядка ще немає) властивість 'Context notes' (тип Text) значенням, яке " +
-        "передав користувач. Після виконання поверни лише слово OK.";
-      await callClaude(config, system, "Контекст для збереження: " + contextText, true);
+      await saveContextToNotion(contextText);
       el("context-msg").textContent = "Збережено в Notion.";
       el("context-msg").className = "saved-msg";
       el("context-note").value = "";
       activeTags.clear();
       document.querySelectorAll(".chip.active").forEach(function (c) { c.classList.remove("active"); });
     } catch (e) {
-      el("context-msg").textContent = "Помилка: " + e.message +
-        ". Перевір, чи є в базі властивість 'Context notes' (Text).";
+      el("context-msg").textContent = "Помилка: " + e.message;
       el("context-msg").className = "error-msg";
     } finally {
       el("save-context-btn").disabled = false;
@@ -685,7 +671,7 @@
 
     try {
       const [row, current, yesterdayEvening] = await Promise.all([
-        fetchLatestNotionRow(config),
+        fetchLatestNotionRow(),
         getCurrentWeather(config.weatherKey),
         getYesterdayEveningWeather(config.weatherKey)
       ]);
@@ -695,7 +681,7 @@
       renderDetails(row);
 
       const userMessage = buildUserMessage(row, lastWeather, null);
-      const briefText = await callClaude(config, briefSystemPrompt(config), userMessage, false);
+      const briefText = await callClaude(config, briefSystemPrompt(config), userMessage);
       lastBrief = extractJson(briefText);
       renderBrief(lastBrief);
     } catch (e) {
