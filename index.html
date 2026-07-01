@@ -6,16 +6,17 @@
 <title>Health Briefing</title>
 <style>
   :root {
-    --bg: #fafafa;
-    --card: #ffffff;
-    --text: #1a1a1a;
-    --muted: #6b6b6b;
-    --border: #e5e5e5;
-    --accent: #2563eb;
+    --bg: #0e0e10;
+    --card: #1c1c1f;
+    --card-alt: #26262a;
+    --text: #f2f2f3;
+    --muted: #9a9aa0;
+    --border: #333338;
+    --accent: #3b82f6;
     --green: #22c55e;
     --yellow: #eab308;
     --red: #ef4444;
-    --radius: 14px;
+    --radius: 16px;
   }
   * { box-sizing: border-box; }
   body {
@@ -96,15 +97,16 @@
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: #fff;
+    background: var(--card-alt);
     color: var(--text);
   }
+  textarea::placeholder, input::placeholder { color: var(--muted); }
   textarea { min-height: 64px; resize: vertical; }
   button.primary {
     width: 100%;
-    padding: 11px;
-    background: var(--accent);
-    color: #fff;
+    padding: 12px;
+    background: #fff;
+    color: #111;
     border: none;
     border-radius: 10px;
     font-size: 14px;
@@ -130,12 +132,12 @@
     font-size: 13px;
   }
   .details-grid .item {
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 10px;
+    background: var(--card-alt);
+    border-radius: 12px;
+    padding: 12px 14px;
   }
   .details-grid .item .k { color: var(--muted); font-size: 11px; }
-  .details-grid .item .v { font-weight: 600; margin-top: 2px; }
+  .details-grid .item .v { font-weight: 700; font-size: 20px; margin-top: 4px; }
   .chips {
     display: flex;
     flex-wrap: wrap;
@@ -143,7 +145,7 @@
     margin-bottom: 10px;
   }
   .chip {
-    background: var(--bg);
+    background: var(--card-alt);
     border: 1px solid var(--border);
     border-radius: 999px;
     padding: 7px 14px;
@@ -175,7 +177,7 @@
   }
   .segmented {
     display: flex;
-    background: var(--bg);
+    background: var(--card);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 3px;
@@ -193,9 +195,8 @@
     cursor: pointer;
   }
   .segmented button.active {
-    background: var(--card);
+    background: var(--card-alt);
     color: var(--text);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
   }
   .mood-scale {
     display: flex;
@@ -208,9 +209,10 @@
     text-align: center;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: #fff;
+    background: var(--card-alt);
     cursor: pointer;
     font-size: 15px;
+    color: var(--text);
   }
   .mood-btn.active {
     background: var(--accent);
@@ -228,14 +230,15 @@
     text-align: center;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: #fff;
+    background: var(--card-alt);
     cursor: pointer;
     font-size: 13px;
+    color: var(--text);
   }
   .movement-btn.active {
-    background: var(--accent);
+    background: var(--green);
     color: #fff;
-    border-color: var(--accent);
+    border-color: var(--green);
   }
 </style>
 </head>
@@ -351,6 +354,7 @@
     el("tab-evening").classList.toggle("active", !isMorning);
     el("morning-view").classList.toggle("hidden", !isMorning);
     el("evening-view").classList.toggle("hidden", isMorning);
+    el("greeting").textContent = isMorning ? "Доброго ранку, Юрію" : "Як пройшов день?";
   }
 
   el("tab-morning").addEventListener("click", function () { setTab("morning"); });
@@ -405,28 +409,27 @@
 
   function renderDetails(row) {
     const items = [
-      ["Сон (год)", row.sleep_hours],
-      ["Sleep score", row.sleep_score],
-      ["HRV avg", row.hrv_avg],
-      ["HRV status", row.hrv_status],
-      ["Body Battery", (row.body_battery_low != null && row.body_battery_high != null)
-        ? (row.body_battery_low + "–" + row.body_battery_high) : null],
-      ["Пульс спокою", row.resting_hr],
-      ["Глибокий сон, хв", row.deep_sleep_min],
-      ["REM сон, хв", row.rem_sleep_min],
-      ["Легкий сон, хв", row.light_sleep_min],
-      ["SpO2 avg", row.spo2_avg],
-      ["Стрес", row.stress_avg],
-      ["Кроки", row.steps],
-      ["Тренування", row.activities || "—"]
+      ["Сон", row.sleep_score, row.sleep_hours != null ? (row.sleep_hours + " год") : null],
+      ["HRV", row.hrv_avg, row.hrv_status || null],
+      ["Body battery", (row.body_battery_low != null && row.body_battery_high != null)
+        ? (row.body_battery_low + "–" + row.body_battery_high) : null, "мін → макс"],
+      ["Пульс спокою", row.resting_hr, "уд/хв"],
+      ["Глибокий сон, хв", row.deep_sleep_min, null],
+      ["REM сон, хв", row.rem_sleep_min, null],
+      ["Легкий сон, хв", row.light_sleep_min, null],
+      ["SpO2 avg", row.spo2_avg, null],
+      ["Стрес", row.stress_avg, null],
+      ["Кроки", row.steps, null],
+      ["Тренування", row.activities || "—", null]
     ];
     const grid = el("details-grid");
     grid.innerHTML = "";
-    items.forEach(function (pair) {
+    items.forEach(function (item) {
       const div = document.createElement("div");
       div.className = "item";
-      div.innerHTML = '<div class="k">' + pair[0] + '</div><div class="v">' +
-        (pair[1] != null && pair[1] !== "" ? pair[1] : "—") + "</div>";
+      const value = item[1] != null && item[1] !== "" ? item[1] : "—";
+      const caption = item[2] ? '<div class="k">' + item[2] + "</div>" : "";
+      div.innerHTML = '<div class="k">' + item[0] + '</div><div class="v">' + value + "</div>" + caption;
       grid.appendChild(div);
     });
   }
