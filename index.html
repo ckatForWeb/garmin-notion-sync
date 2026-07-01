@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Health Briefing</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+    --border: #e5e5e5;
+    --accent: #2563eb;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 18px 80px;
+    min-height: 100vh;
+  }
+  header.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+  }
+  header.top h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+  }
+  header.top .date {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .gear {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--muted);
+    padding: 4px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .statuses {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+  .dot {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #ddd;
+    transition: background 0.3s;
+  }
+  .dot.green { background: var(--green); }
+  .dot.yellow { background: var(--yellow); }
+  .dot.red { background: var(--red); }
+  .status span {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .brief-text {
+    font-size: 15px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .skeleton {
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .question-box {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .question-box p {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0 0 8px;
+  }
+  textarea, input[type=text], input[type=number], input[type=password], select {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
+  }
+  textarea { min-height: 64px; resize: vertical; }
+  button.primary {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  button.primary:disabled { opacity: 0.5; cursor: default; }
+  button.secondary {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .details-toggle {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .details-grid .item {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 10px;
+  }
+  .details-grid .item .k { color: var(--muted); font-size: 11px; }
+  .details-grid .item .v { font-weight: 600; margin-top: 2px; }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .chip.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 50;
+  }
+  .modal {
+    background: var(--card);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px 18px 28px;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .modal h2 { margin: 0 0 4px; font-size: 18px; }
+  .modal .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .hidden { display: none !important; }
+  .error-msg {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .saved-msg {
+    color: var(--green);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 id="greeting">Привіт</h1>
+      <div class="date" id="today-date"></div>
+    </div>
+    <button class="gear" id="settings-btn" title="Налаштування">&#9881;</button>
+  </header>
+
+  <div class="card">
+    <div class="statuses">
+      <div class="status">
+        <div class="dot" id="dot-sleep"></div>
+        <span>Сон</span>
+      </div>
+      <div class="status">
+        <div class="dot" id="dot-recovery"></div>
+        <span>Відновлення</span>
+      </div>
+      <div class="status">
+        <div class="dot" id="dot-readiness"></div>
+        <span>Готовність</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="brief-text" class="brief-text skeleton">Аналізую дані...</div>
+    <div id="question-box" class="question-box hidden">
+      <p id="question-text"></p>
+      <textarea id="question-answer" placeholder="Напиши, що сталось..."></textarea>
+      <button class="primary" id="answer-submit">Врахувати відповідь</button>
+    </div>
+  </div>
+
+  <button class="details-toggle" id="details-toggle">Детальніше ▾</button>
+  <div class="card hidden" id="details-card">
+    <div class="details-grid" id="details-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="chips" id="context-chips">
+      <div class="chip" data-tag="Тривога вночі">Тривога вночі</div>
+      <div class="chip" data-tag="Важкий робочий день">Важкий робочий день</div>
+      <div class="chip" data-tag="OPFOR виїзд">OPFOR виїзд</div>
+    </div>
+    <textarea id="context-note" placeholder="Додаткова нотатка (необов'язково)"></textarea>
+    <button class="primary" id="save-context-btn">Зберегти контекст</button>
+    <div id="context-msg"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="onboarding">
+  <div class="modal">
+    <h2>Налаштування</h2>
+    <div class="sub">Потрібно один раз — зберігається лише в цьому браузері.</div>
+
+    <div class="field">
+      <label>Ім'я</label>
+      <input type="text" id="f-name" placeholder="Юрій">
+    </div>
+    <div class="field">
+      <label>Тип роботи</label>
+      <select id="f-worktype">
+        <option value="сидяча">Сидяча</option>
+        <option value="активна">Активна</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Вік</label>
+      <input type="number" id="f-age" placeholder="30">
+    </div>
+    <div class="field">
+      <label>Ціль</label>
+      <select id="f-goal">
+        <option value="здоров'я">Здоров'я</option>
+        <option value="схуднення">Схуднення</option>
+        <option value="спорт">Спорт</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Anthropic API key</label>
+      <input type="password" id="f-anthropic" placeholder="sk-ant-...">
+    </div>
+    <div class="field">
+      <label>Notion token</label>
+      <input type="password" id="f-notion" placeholder="secret_...">
+    </div>
+    <div class="field">
+      <label>OpenWeatherMap API key</label>
+      <input type="password" id="f-weather" placeholder="...">
+    </div>
+
+    <button class="primary" id="save-onboarding-btn">Зберегти і продовжити</button>
+    <div id="onboarding-error" class="error-msg"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const NOTION_DB_ID = "ba792d8a-4507-4ded-a07f-702d3920c613";
+  const KYIV_LAT = 50.4501;
+  const KYIV_LON = 30.5234;
+  const STORAGE_KEY = "healthbrief_config_v1";
+  const MODEL = "claude-sonnet-4-6";
+
+  function loadConfig() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveConfig(cfg) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+  }
+
+  let config = loadConfig();
+
+  function el(id) { return document.getElementById(id); }
+
+  function showOnboarding(prefill) {
+    prefill = prefill || {};
+    el("f-name").value = prefill.name || "";
+    el("f-worktype").value = prefill.workType || "сидяча";
+    el("f-age").value = prefill.age || "";
+    el("f-goal").value = prefill.goal || "здоров'я";
+    el("f-anthropic").value = prefill.anthropicKey || "";
+    el("f-notion").value = prefill.notionToken || "";
+    el("f-weather").value = prefill.weatherKey || "";
+    el("onboarding").classList.remove("hidden");
+  }
+
+  function hideOnboarding() {
+    el("onboarding").classList.add("hidden");
+  }
+
+  el("save-onboarding-btn").addEventListener("click", function () {
+    const name = el("f-name").value.trim();
+    const anthropicKey = el("f-anthropic").value.trim();
+    const notionToken = el("f-notion").value.trim();
+    const weatherKey = el("f-weather").value.trim();
+
+    if (!name || !anthropicKey || !notionToken || !weatherKey) {
+      el("onboarding-error").textContent = "Заповни всі поля, будь ласка.";
+      return;
+    }
+
+    config = {
+      name: name,
+      workType: el("f-worktype").value,
+      age: el("f-age").value,
+      goal: el("f-goal").value,
+      anthropicKey: anthropicKey,
+      notionToken: notionToken,
+      weatherKey: weatherKey
+    };
+    saveConfig(config);
+    hideOnboarding();
+    init();
+  });
+
+  el("settings-btn").addEventListener("click", function () {
+    showOnboarding(config || {});
+  });
+
+  // ---------- Weather ----------
+
+  async function getCurrentWeather(apiKey) {
+    const url = "https://api.openweathermap.org/data/2.5/weather?lat=" + KYIV_LAT +
+      "&lon=" + KYIV_LON + "&appid=" + encodeURIComponent(apiKey) + "&units=metric&lang=ua";
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error("OpenWeatherMap: " + resp.status);
+    const data = await resp.json();
+    return {
+      temp: data.main && data.main.temp,
+      feels_like: data.main && data.main.feels_like,
+      condition: data.weather && data.weather[0] && data.weather[0].description,
+      humidity: data.main && data.main.humidity
+    };
+  }
+
+  // Історія (вчора 22:00) доступна лише на платному One Call 3.0 —
+  // якщо ключ не має підписки, тихо пропускаємо і використовуємо тільки поточну погоду.
+  async function getYesterdayEveningWeather(apiKey) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(22, 0, 0, 0);
+    const dt = Math.floor(yesterday.getTime() / 1000);
+    const url = "https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=" + KYIV_LAT +
+      "&lon=" + KYIV_LON + "&dt=" + dt + "&appid=" + encodeURIComponent(apiKey) + "&units=metric&lang=ua";
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      const point = data.data && data.data[0];
+      if (!point) return null;
+      return {
+        temp: point.temp,
+        condition: point.weather && point.weather[0] && point.weather[0].description
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ---------- Anthropic (з MCP-конектором до Notion) ----------
+
+  async function callClaude(cfg, systemPrompt, userMessage, useNotionMcp) {
+    const body = {
+      model: MODEL,
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMessage }]
+    };
+    if (useNotionMcp) {
+      body.mcp_servers = [{
+        type: "url",
+        url: "https://mcp.notion.com/mcp",
+        name: "notion",
+        authorization_token: cfg.notionToken
+      }];
+    }
+
+    const headers = {
+      "content-type": "application/json",
+      "x-api-key": cfg.anthropicKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    };
+    if (useNotionMcp) {
+      headers["anthropic-beta"] = "mcp-client-2025-04-04";
+    }
+
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error("Anthropic API " + resp.status + ": " + text.slice(0, 300));
+    }
+
+    const data = await resp.json();
+    const textBlocks = (data.content || []).filter(function (b) { return b.type === "text"; });
+    return textBlocks.map(function (b) { return b.text; }).join("\n").trim();
+  }
+
+  function extractJson(text) {
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) {
+        return JSON.parse(match[0]);
+      }
+      throw e;
+    }
+  }
+
+  async function fetchLatestNotionRow(cfg) {
+    const system = "Ти працюєш виключно з інструментами Notion MCP. Твоє єдине завдання: " +
+      "запросити базу даних Notion з ID " + NOTION_DB_ID + ", відсортувати рядки за полем " +
+      "'Day' у спадному порядку, взяти перший (найсвіжіший) рядок і повернути ЛИШЕ raw JSON " +
+      "об'єкт без жодного тексту навколо, markdown-обгортки чи пояснень. Формат JSON, ключі " +
+      "рівно такі (число або null, для activities і hrv_status — рядок або null):\n" +
+      '{"date": "...", "sleep_score": 0, "sleep_hours": 0, "hrv_avg": 0, "hrv_status": "...", ' +
+      '"body_battery_high": 0, "body_battery_low": 0, "resting_hr": 0, "deep_sleep_min": 0, ' +
+      '"rem_sleep_min": 0, "light_sleep_min": 0, "spo2_avg": 0, "spo2_low": 0, "stress_avg": 0, ' +
+      '"activities": "..."}';
+
+    const text = await callClaude(cfg, system, "Виконай завдання і поверни JSON.", true);
+    return extractJson(text);
+  }
+
+  // ---------- Основний брифінг ----------
+
+  const STATUS_COLORS = ["green", "yellow", "red"];
+
+  function setDot(id, color) {
+    const node = el(id);
+    STATUS_COLORS.forEach(function (c) { node.classList.remove(c); });
+    if (STATUS_COLORS.indexOf(color) !== -1) {
+      node.classList.add(color);
+    }
+  }
+
+  function renderDetails(row) {
+    const items = [
+      ["Сон (год)", row.sleep_hours],
+      ["Sleep score", row.sleep_score],
+      ["HRV avg", row.hrv_avg],
+      ["HRV status", row.hrv_status],
+      ["Body Battery", (row.body_battery_low != null && row.body_battery_high != null)
+        ? (row.body_battery_low + "–" + row.body_battery_high) : null],
+      ["Пульс спокою", row.resting_hr],
+      ["Глибокий сон, хв", row.deep_sleep_min],
+      ["REM сон, хв", row.rem_sleep_min],
+      ["Легкий сон, хв", row.light_sleep_min],
+      ["SpO2 avg", row.spo2_avg],
+      ["SpO2 low", row.spo2_low],
+      ["Стрес", row.stress_avg],
+      ["Тренування", row.activities || "—"]
+    ];
+    const grid = el("details-grid");
+    grid.innerHTML = "";
+    items.forEach(function (pair) {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = '<div class="k">' + pair[0] + '</div><div class="v">' +
+        (pair[1] != null && pair[1] !== "" ? pair[1] : "—") + "</div>";
+      grid.appendChild(div);
+    });
+  }
+
+  let lastRow = null;
+  let lastWeather = null;
+  let lastBrief = null;
+
+  function briefSystemPrompt(cfg) {
+    return "Ти персональний health-тренер користувача на ім'я " + cfg.name + ". " +
+      "Говориш українською на 'ти', коротко і по суті, без медичного жаргону і без вибачень. " +
+      "Користувач: вік " + (cfg.age || "невідомий") + ", тип роботи — " + cfg.workType +
+      ", ціль — " + cfg.goal + ". " +
+      "Враховуй погоду і тип роботи, коли даєш пораду. " +
+      "Відповідай ЛИШЕ JSON без жодного тексту навколо у форматі: " +
+      '{"sleep_status": "green|yellow|red", "recovery_status": "green|yellow|red", ' +
+      '"readiness_status": "green|yellow|red", "summary": "один абзац: що відбувається з тілом, ' +
+      'чому (з урахуванням погоди), і одна конкретна порада на сьогодні", ' +
+      '"clarifying_question": "питання, якщо якийсь показник аномальний, інакше null"}';
+  }
+
+  function buildUserMessage(row, weather, extraContext) {
+    let msg = "Дані Garmin за останній день:\n" + JSON.stringify(row) + "\n\n" +
+      "Погода в Києві зараз:\n" + JSON.stringify(weather.current) + "\n";
+    if (weather.yesterdayEvening) {
+      msg += "Погода вчора о 22:00:\n" + JSON.stringify(weather.yesterdayEvening) + "\n";
+    }
+    if (extraContext) {
+      msg += "\nДодатковий контекст від користувача:\n" + extraContext + "\n";
+    }
+    return msg;
+  }
+
+  function renderBrief(brief) {
+    setDot("dot-sleep", brief.sleep_status);
+    setDot("dot-recovery", brief.recovery_status);
+    setDot("dot-readiness", brief.readiness_status);
+    el("brief-text").textContent = brief.summary;
+    el("brief-text").classList.remove("skeleton");
+
+    if (brief.clarifying_question) {
+      el("question-text").textContent = brief.clarifying_question;
+      el("question-box").classList.remove("hidden");
+    } else {
+      el("question-box").classList.add("hidden");
+    }
+  }
+
+  el("answer-submit").addEventListener("click", async function () {
+    const answer = el("question-answer").value.trim();
+    if (!answer || !lastRow || !lastWeather) return;
+    el("answer-submit").disabled = true;
+    el("brief-text").textContent = "Оновлюю пораду...";
+    el("brief-text").classList.add("skeleton");
+    try {
+      const extra = "Питання було: '" + (lastBrief.clarifying_question || "") +
+        "'. Відповідь користувача: '" + answer + "'. Врахуй це у новій пораді.";
+      const userMessage = buildUserMessage(lastRow, lastWeather, extra);
+      const text = await callClaude(config, briefSystemPrompt(config), userMessage, false);
+      lastBrief = extractJson(text);
+      renderBrief(lastBrief);
+      el("question-box").classList.add("hidden");
+    } catch (e) {
+      el("brief-text").textContent = "Помилка оновлення поради: " + e.message;
+      el("brief-text").classList.remove("skeleton");
+    } finally {
+      el("answer-submit").disabled = false;
+    }
+  });
+
+  el("details-toggle").addEventListener("click", function () {
+    const card = el("details-card");
+    const collapsed = card.classList.contains("hidden");
+    card.classList.toggle("hidden");
+    el("details-toggle").textContent = collapsed ? "Детальніше ▴" : "Детальніше ▾";
+  });
+
+  // ---------- Швидкий контекст ----------
+
+  let activeTags = new Set();
+  document.querySelectorAll(".chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      const tag = chip.getAttribute("data-tag");
+      if (activeTags.has(tag)) {
+        activeTags.delete(tag);
+        chip.classList.remove("active");
+      } else {
+        activeTags.add(tag);
+        chip.classList.add("active");
+      }
+    });
+  });
+
+  el("save-context-btn").addEventListener("click", async function () {
+    const note = el("context-note").value.trim();
+    const tags = Array.from(activeTags);
+    if (!tags.length && !note) {
+      el("context-msg").textContent = "Обери тег або напиши нотатку.";
+      el("context-msg").className = "error-msg";
+      return;
+    }
+    const contextText = tags.concat(note ? [note] : []).join("; ");
+    el("save-context-btn").disabled = true;
+    el("context-msg").textContent = "Зберігаю...";
+    el("context-msg").className = "";
+
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const system = "Ти працюєш виключно з інструментами Notion MCP. Знайди в базі даних " +
+        NOTION_DB_ID + " рядок, де властивість 'Day' дорівнює " + today + ". Онови (або створи, " +
+        "якщо такого рядка ще немає) властивість 'Context notes' (тип Text) значенням, яке " +
+        "передав користувач. Після виконання поверни лише слово OK.";
+      await callClaude(config, system, "Контекст для збереження: " + contextText, true);
+      el("context-msg").textContent = "Збережено в Notion.";
+      el("context-msg").className = "saved-msg";
+      el("context-note").value = "";
+      activeTags.clear();
+      document.querySelectorAll(".chip.active").forEach(function (c) { c.classList.remove("active"); });
+    } catch (e) {
+      el("context-msg").textContent = "Помилка: " + e.message +
+        ". Перевір, чи є в базі властивість 'Context notes' (Text).";
+      el("context-msg").className = "error-msg";
+    } finally {
+      el("save-context-btn").disabled = false;
+    }
+  });
+
+  // ---------- Ініціалізація ----------
+
+  function renderGreetingDate() {
+    el("greeting").textContent = "Привіт" + (config && config.name ? ", " + config.name : "") + "!";
+    const now = new Date();
+    el("today-date").textContent = now.toLocaleDateString("uk-UA", {
+      weekday: "long", day: "numeric", month: "long"
+    });
+  }
+
+  async function init() {
+    renderGreetingDate();
+    el("brief-text").textContent = "Аналізую дані...";
+    el("brief-text").classList.add("skeleton");
+
+    try {
+      const [row, current, yesterdayEvening] = await Promise.all([
+        fetchLatestNotionRow(config),
+        getCurrentWeather(config.weatherKey),
+        getYesterdayEveningWeather(config.weatherKey)
+      ]);
+
+      lastRow = row;
+      lastWeather = { current: current, yesterdayEvening: yesterdayEvening };
+      renderDetails(row);
+
+      const userMessage = buildUserMessage(row, lastWeather, null);
+      const briefText = await callClaude(config, briefSystemPrompt(config), userMessage, false);
+      lastBrief = extractJson(briefText);
+      renderBrief(lastBrief);
+    } catch (e) {
+      el("brief-text").textContent = "Помилка завантаження: " + e.message;
+      el("brief-text").classList.remove("skeleton");
+    }
+  }
+
+  if (!config) {
+    showOnboarding({});
+  } else {
+    init();
+  }
+})();
+</script>
+
+</body>
+</html>
