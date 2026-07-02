@@ -3,6 +3,7 @@ name: Garmin -> Notion sync
 on:
   schedule:
     - cron: "0 6 * * *"
+    - cron: "30 6 * * *"
   workflow_dispatch:
     inputs:
       days_back:
