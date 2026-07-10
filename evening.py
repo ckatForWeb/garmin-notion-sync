@@ -17,7 +17,6 @@ NOTION_TOKEN = os.environ["NOTION_TOKEN"]
 NOTION_DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 MODEL = "claude-sonnet-4-6"
-USER_NAME = "Юрій"
 
 NOTION_HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
@@ -29,6 +28,15 @@ NOTION_HEADERS = {
 def num(props: dict, name: str):
     p = props.get(name)
     return p.get("number") if p else None
+
+
+def text(props: dict, name: str):
+    p = props.get(name)
+    if not p:
+        return None
+    if p.get("rich_text"):
+        return "".join(t["plain_text"] for t in p["rich_text"]) or None
+    return None
 
 
 def fetch_today_row() -> dict | None:
@@ -50,18 +58,14 @@ def fetch_today_row() -> dict | None:
         "stress_avg": num(props, "Stress avg"),
         "body_battery_high": num(props, "Body Battery high"),
         "body_battery_low": num(props, "Body Battery low"),
+        "activities": text(props, "Activities"),
     }
 
 
-def build_system_prompt() -> str:
-    return (
-        f"Ти персональний health-тренер користувача на ім'я {USER_NAME}. "
-        "Говориш українською на 'ти', коротко і по суті, без медичного жаргону. "
-        "На основі даних за сьогодні (кроки, стрес, динаміка Body Battery) напиши короткий "
-        "вечірній підсумок: як пройшов день по цих даних, і одну конкретну пораду що зробити "
-        "перед сном для кращого відновлення. 2-3 речення, без вступних фраз і привітань. "
-        "Відповідай ЛИШЕ текстом підсумку, без JSON і без лапок навколо."
-    )
+SYSTEM_PROMPT = (
+    "Коротко (2-3 речення) підсумуй день по даних і дай одну пораду що зробити перед сном "
+    "для кращого відновлення. Говориш на 'ти', просто і по-людськи."
+)
 
 
 def call_claude(system_prompt: str, user_message: str) -> str:
@@ -108,9 +112,10 @@ def main():
         "body_battery_high": row["body_battery_high"],
         "body_battery_low": row["body_battery_low"],
         "body_battery_swing": bb_swing,
+        "activities": row["activities"],
     }, ensure_ascii=False)
 
-    brief_text = call_claude(build_system_prompt(), user_message)
+    brief_text = call_claude(SYSTEM_PROMPT, user_message)
     save_to_notion(row["page_id"], brief_text)
     print(f"Evening brief saved for {row['date']}: {brief_text}")
 

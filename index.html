@@ -6,28 +6,30 @@
 <title>Health Briefing</title>
 <style>
   :root {
-    --bg: #0e0e10;
-    --card: #1c1c1f;
-    --card-alt: #26262a;
-    --text: #f2f2f3;
-    --muted: #9a9aa0;
-    --border: #333338;
-    --accent: #3b82f6;
+    --surface-0: #f5f5f3;
+    --surface-1: #eae9e5;
+    --white: #ffffff;
+    --text: #1a1a18;
+    --muted: #8b8a84;
+    --border: rgba(0,0,0,0.08);
+    --accent: #1a1a18;
     --green: #22c55e;
     --yellow: #eab308;
     --red: #ef4444;
     --radius: 16px;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-voice: Georgia, "Times New Roman", serif;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
+    font-family: var(--font-ui);
+    background: var(--surface-0);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
   }
   .wrap {
-    max-width: 480px;
+    max-width: 390px;
     margin: 0 auto;
     padding: 24px 18px 80px;
     min-height: 100vh;
@@ -35,21 +37,69 @@
   header.top {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 20px;
-  }
-  header.top h1 {
-    font-size: 20px;
-    font-weight: 600;
-    margin: 0;
+    align-items: flex-start;
+    margin-bottom: 16px;
   }
   header.top .date {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--muted);
+    margin-bottom: 2px;
   }
+  header.top h1 {
+    font-size: 22px;
+    font-weight: 500;
+    margin: 0;
+  }
+  .gear-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .gear-btn svg { width: 22px; height: 22px; }
+
+  .segmented {
+    display: flex;
+    background: var(--surface-1);
+    border-radius: 999px;
+    padding: 4px;
+    margin-bottom: 12px;
+  }
+  .segmented button {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+  }
+  .segmented button.active {
+    background: var(--white);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+
+  .weather-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-1);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .weather-pill svg { width: 14px; height: 14px; color: #d97706; flex-shrink: 0; }
+
   .card {
-    background: var(--card);
-    border: 1px solid var(--border);
+    background: var(--surface-1);
     border-radius: var(--radius);
     padding: 18px;
     margin-bottom: 16px;
@@ -68,10 +118,10 @@
     flex: 1;
   }
   .dot {
-    width: 42px;
-    height: 42px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background: #ddd;
+    background: #d8d7d2;
     transition: background 0.3s;
   }
   .dot.green { background: var(--green); }
@@ -82,62 +132,77 @@
     color: var(--muted);
   }
   .brief-text {
-    font-size: 15px;
-    line-height: 1.5;
+    font-family: var(--font-voice);
+    font-size: 14px;
+    line-height: 1.65;
     white-space: pre-wrap;
   }
-  .muted-text {
-    color: var(--muted);
-    font-size: 14px;
-  }
-  textarea, input[type=text], input[type=number] {
+  .muted-text { color: var(--muted); }
+
+  textarea, input[type=text] {
     width: 100%;
-    font-family: inherit;
+    font-family: var(--font-ui);
     font-size: 14px;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: var(--card-alt);
+    background: var(--white);
     color: var(--text);
   }
   textarea::placeholder, input::placeholder { color: var(--muted); }
   textarea { min-height: 64px; resize: vertical; }
+
   button.primary {
     width: 100%;
-    padding: 12px;
-    background: #fff;
-    color: #111;
+    padding: 13px;
+    background: var(--text);
+    color: var(--white);
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 12px;
+    font-family: var(--font-ui);
   }
   button.primary:disabled { opacity: 0.5; cursor: default; }
+
   .details-toggle {
     background: none;
     border: none;
-    color: var(--accent);
+    color: var(--text);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     padding: 4px 0;
+    font-family: var(--font-ui);
   }
   .details-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
     margin-top: 12px;
-    font-size: 13px;
   }
   .details-grid .item {
-    background: var(--card-alt);
+    background: var(--white);
     border-radius: 12px;
     padding: 12px 14px;
   }
   .details-grid .item .k { color: var(--muted); font-size: 11px; }
   .details-grid .item .v { font-weight: 700; font-size: 20px; margin-top: 4px; }
+  .details-grid .item .c { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 22px 0;
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
   .chips {
     display: flex;
     flex-wrap: wrap;
@@ -145,7 +210,7 @@
     margin-bottom: 10px;
   }
   .chip {
-    background: var(--card-alt);
+    background: var(--white);
     border: 1px solid var(--border);
     border-radius: 999px;
     padding: 7px 14px;
@@ -153,55 +218,22 @@
     cursor: pointer;
   }
   .chip.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
+    background: var(--text);
+    color: var(--white);
+    border-color: var(--text);
   }
-  .field { margin-bottom: 12px; }
+
+  .field { margin-bottom: 16px; }
   .field label {
     display: block;
     font-size: 13px;
     font-weight: 500;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
-  .hidden { display: none !important; }
-  .error-msg {
-    color: var(--red);
-    font-size: 13px;
-    margin-top: 8px;
-  }
-  .saved-msg {
-    color: var(--green);
-    font-size: 13px;
-    margin-top: 8px;
-  }
-  .segmented {
-    display: flex;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 3px;
-    margin-bottom: 18px;
-  }
-  .segmented button {
-    flex: 1;
-    border: none;
-    background: none;
-    padding: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--muted);
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .segmented button.active {
-    background: var(--card-alt);
-    color: var(--text);
-  }
-  .mood-scale {
+
+  .mood-scale, .movement-options {
     display: flex;
     gap: 8px;
-    margin-bottom: 4px;
   }
   .mood-btn {
     flex: 1;
@@ -209,20 +241,15 @@
     text-align: center;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: var(--card-alt);
+    background: var(--white);
     cursor: pointer;
     font-size: 15px;
     color: var(--text);
   }
   .mood-btn.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-  }
-  .movement-options {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 4px;
+    background: var(--text);
+    color: var(--white);
+    border-color: var(--text);
   }
   .movement-btn {
     flex: 1;
@@ -230,16 +257,52 @@
     text-align: center;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: var(--card-alt);
+    background: var(--white);
     cursor: pointer;
     font-size: 13px;
     color: var(--text);
   }
   .movement-btn.active {
     background: var(--green);
-    color: #fff;
+    color: var(--white);
     border-color: var(--green);
   }
+
+  .hidden { display: none !important; }
+  .error-msg { color: var(--red); font-size: 13px; margin-top: 8px; }
+  .saved-msg { color: var(--green); font-size: 13px; margin-top: 8px; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal {
+    background: var(--white);
+    width: 100%;
+    max-width: 340px;
+    border-radius: 18px;
+    padding: 22px;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px;
+  }
+  .modal h2 { margin: 0 0 16px; font-size: 17px; }
 </style>
 </head>
 <body>
@@ -247,14 +310,25 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <h1 id="greeting">Привіт, Юрій!</h1>
       <div class="date" id="today-date"></div>
+      <h1 id="greeting">Привіт</h1>
     </div>
+    <button class="gear-btn" id="settings-btn" title="Налаштування">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <circle cx="12" cy="12" r="3.2"/>
+        <path d="M19.4 13.5c.1-.5.1-1 0-1.5l1.9-1.4-2-3.4-2.2.8c-.4-.3-.8-.6-1.3-.8L15.4 5h-4l-.4 2.2c-.5.2-.9.5-1.3.8l-2.2-.8-2 3.4L7.4 12c-.1.5-.1 1 0 1.5l-1.9 1.4 2 3.4 2.2-.8c.4.3.8.6 1.3.8L11.4 20h4l.4-2.2c.5-.2.9-.5 1.3-.8l2.2.8 2-3.4-1.9-1.4Z"/>
+      </svg>
+    </button>
   </header>
 
   <div class="segmented">
     <button id="tab-morning">Ранок</button>
     <button id="tab-evening">Вечір</button>
+  </div>
+
+  <div class="weather-pill hidden" id="weather-pill">
+    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4.5"/><g stroke="currentColor" stroke-width="1.6"><path d="M12 2v2.2M12 19.8V22M4.2 12H2M22 12h-2.2M5.6 5.6l1.5 1.5M16.9 16.9l1.5 1.5M5.6 18.4l1.5-1.5M16.9 7.1l1.5-1.5"/></g></svg>
+    <span id="weather-text"></span>
   </div>
 
   <div id="morning-view">
@@ -284,16 +358,17 @@
       <div class="details-grid" id="details-grid"></div>
     </div>
 
-    <div class="card">
-      <div class="chips" id="context-chips">
-        <div class="chip" data-tag="Тривога вночі">Тривога вночі</div>
-        <div class="chip" data-tag="Важкий робочий день">Важкий робочий день</div>
-        <div class="chip" data-tag="OPFOR виїзд">OPFOR виїзд</div>
-      </div>
-      <textarea id="context-note" placeholder="Додаткова нотатка (необов'язково)"></textarea>
-      <button class="primary" id="save-context-btn">Зберегти контекст</button>
-      <div id="context-msg"></div>
+    <div class="divider"></div>
+
+    <div class="section-title">Що відбувалось вночі?</div>
+    <div class="chips" id="context-chips">
+      <div class="chip" data-tag="Тривога вночі">Тривога</div>
+      <div class="chip" data-tag="Важкий робочий день">Важкий день</div>
+      <div class="chip" data-tag="OPFOR виїзд">OPFOR</div>
     </div>
+    <textarea id="context-note" placeholder="Додаткова нотатка (необов'язково)"></textarea>
+    <button class="primary" id="save-context-btn">Зберегти</button>
+    <div id="context-msg"></div>
   </div>
 
   <div id="evening-view" class="hidden">
@@ -301,37 +376,48 @@
       <div id="evening-brief-text" class="brief-text muted-text">Завантажую...</div>
     </div>
 
-    <div class="card">
-      <div class="field">
-        <label>Як пройшов день емоційно?</label>
-        <div class="mood-scale" id="mood-scale">
-          <div class="mood-btn" data-mood="1">1</div>
-          <div class="mood-btn" data-mood="2">2</div>
-          <div class="mood-btn" data-mood="3">3</div>
-          <div class="mood-btn" data-mood="4">4</div>
-          <div class="mood-btn" data-mood="5">5</div>
-        </div>
-        <textarea id="evening-mood-note" placeholder="Коротко чому (необов'язково)"></textarea>
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>Як себе почуваєш?</label>
+      <div class="mood-scale" id="mood-scale">
+        <div class="mood-btn" data-mood="1">1</div>
+        <div class="mood-btn" data-mood="2">2</div>
+        <div class="mood-btn" data-mood="3">3</div>
+        <div class="mood-btn" data-mood="4">4</div>
+        <div class="mood-btn" data-mood="5">5</div>
       </div>
-      <div class="field">
-        <label>Що було найважчим сьогодні?</label>
-        <textarea id="evening-hardest" placeholder="..."></textarea>
-      </div>
-      <div class="field">
-        <label>Чи рухався сьогодні?</label>
-        <div class="movement-options" id="movement-options">
-          <div class="movement-btn" data-movement="Так">Так</div>
-          <div class="movement-btn" data-movement="Трохи">Трохи</div>
-          <div class="movement-btn" data-movement="Ні">Ні</div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Що хочеш від завтра?</label>
-        <textarea id="evening-tomorrow" placeholder="..."></textarea>
-      </div>
-      <button class="primary" id="save-evening-btn">Зберегти вечір</button>
-      <div id="evening-msg"></div>
     </div>
+    <div class="field">
+      <label>Що було важким?</label>
+      <textarea id="evening-hardest" placeholder="..."></textarea>
+    </div>
+    <div class="field">
+      <label>Чи рухався?</label>
+      <div class="movement-options" id="movement-options">
+        <div class="movement-btn" data-movement="Так">Так</div>
+        <div class="movement-btn" data-movement="Трохи">Трохи</div>
+        <div class="movement-btn" data-movement="Ні">Ні</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Чого хочеш від завтра?</label>
+      <textarea id="evening-tomorrow" placeholder="..."></textarea>
+    </div>
+    <button class="primary" id="save-evening-btn">Зберегти вечір</button>
+    <div id="evening-msg"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="settings-modal">
+  <div class="modal">
+    <button class="modal-close" id="settings-close">&times;</button>
+    <h2>Налаштування</h2>
+    <div class="field">
+      <label>Ім'я</label>
+      <input type="text" id="f-name" placeholder="Юрій">
+    </div>
+    <button class="primary" id="save-settings-btn">Зберегти</button>
   </div>
 </div>
 
@@ -340,26 +426,68 @@
   "use strict";
 
   // Проксі до Notion (тримає NOTION_TOKEN на сервері Netlify). Фронтенд тільки
-  // читає вже готові Morning brief / Evening brief / статуси — сама генерація
-  // відбувається заздалегідь у GitHub Actions (morning.py о 8:00, evening.py о 19:00).
+  // читає вже готові Morning brief / Evening brief / статуси / погоду — сама
+  // генерація відбувається заздалегідь у GitHub Actions (morning.py, evening.py).
   const NOTION_PROXY_URL = "https://fascinating-puppy-c11d90.netlify.app/.netlify/functions/notion";
   // Спільний секрет проти випадкового сканування endpoint'у ботами. Це НЕ повний
-  // захист — будь-хто, хто прочитає цей публічний код, побачить і секрет (він же
-  // не може бути справжньою таємницею в статичному HTML). Але це відсікає
-  // автоматичне сканування Netlify-піддоменів, яке не рендерить сторінку.
+  // захист — будь-хто, хто прочитає цей публічний код, побачить і секрет. Але це
+  // відсікає автоматичне сканування Netlify-піддоменів, яке не рендерить сторінку.
   const APP_SECRET = "_MOLkaA9IRN4kogjX9srvcqppLsjDOfb";
+  const SETTINGS_KEY = "healthbrief_settings_v1";
 
   function el(id) { return document.getElementById(id); }
 
+  // ---------- Налаштування (тільки ім'я — впливає на привітання) ----------
+
+  function loadSettings() {
+    try {
+      return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null") || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  let settings = loadSettings();
+
+  function openSettings() {
+    el("f-name").value = settings.name || "";
+    el("settings-modal").classList.remove("hidden");
+  }
+
+  function closeSettings() {
+    el("settings-modal").classList.add("hidden");
+  }
+
+  el("settings-btn").addEventListener("click", openSettings);
+  el("settings-close").addEventListener("click", closeSettings);
+  el("settings-modal").addEventListener("click", function (e) {
+    if (e.target === el("settings-modal")) closeSettings();
+  });
+
+  el("save-settings-btn").addEventListener("click", function () {
+    settings.name = el("f-name").value.trim();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    closeSettings();
+    updateGreeting();
+  });
+
   // ---------- Перемикач Ранок / Вечір ----------
 
+  let currentTab = "morning";
+
+  function updateGreeting() {
+    const name = settings.name ? ", " + settings.name : "";
+    el("greeting").textContent = currentTab === "morning" ? ("Доброго ранку" + name) : "Як пройшов день?";
+  }
+
   function setTab(mode) {
+    currentTab = mode;
     const isMorning = mode === "morning";
     el("tab-morning").classList.toggle("active", isMorning);
     el("tab-evening").classList.toggle("active", !isMorning);
     el("morning-view").classList.toggle("hidden", !isMorning);
     el("evening-view").classList.toggle("hidden", isMorning);
-    el("greeting").textContent = isMorning ? "Доброго ранку, Юрію" : "Як пройшов день?";
+    updateGreeting();
   }
 
   el("tab-morning").addEventListener("click", function () { setTab("morning"); });
@@ -418,16 +546,9 @@
     const items = [
       ["Сон", row.sleep_score, row.sleep_hours != null ? (row.sleep_hours + " год") : null],
       ["HRV", row.hrv_avg, row.hrv_status || null],
-      ["Body battery", (row.body_battery_low != null && row.body_battery_high != null)
+      ["Body Battery", (row.body_battery_low != null && row.body_battery_high != null)
         ? (row.body_battery_low + "–" + row.body_battery_high) : null, "мін → макс"],
-      ["Пульс спокою", row.resting_hr, "уд/хв"],
-      ["Глибокий сон, хв", row.deep_sleep_min, null],
-      ["REM сон, хв", row.rem_sleep_min, null],
-      ["Легкий сон, хв", row.light_sleep_min, null],
-      ["SpO2 avg", row.spo2_avg, null],
-      ["Стрес", row.stress_avg, null],
-      ["Кроки", row.steps, null],
-      ["Тренування", row.activities || "—", null]
+      ["Пульс спокою", row.resting_hr, "уд/хв"]
     ];
     const grid = el("details-grid");
     grid.innerHTML = "";
@@ -435,10 +556,22 @@
       const div = document.createElement("div");
       div.className = "item";
       const value = item[1] != null && item[1] !== "" ? item[1] : "—";
-      const caption = item[2] ? '<div class="k">' + item[2] + "</div>" : "";
+      const caption = item[2] ? '<div class="c">' + item[2] + "</div>" : "";
       div.innerHTML = '<div class="k">' + item[0] + '</div><div class="v">' + value + "</div>" + caption;
       grid.appendChild(div);
     });
+  }
+
+  function renderWeather(row) {
+    if (row.weather_temp == null && !row.weather_condition) {
+      el("weather-pill").classList.add("hidden");
+      return;
+    }
+    const parts = [];
+    if (row.weather_temp != null) parts.push(Math.round(row.weather_temp) + "°");
+    if (row.weather_condition) parts.push(row.weather_condition);
+    el("weather-text").textContent = parts.join(" · ");
+    el("weather-pill").classList.remove("hidden");
   }
 
   function renderMorning(row) {
@@ -451,7 +584,7 @@
       briefEl.textContent = row.morning_brief;
       briefEl.classList.remove("muted-text");
     } else {
-      briefEl.textContent = "Ранковий брифінг ще не згенеровано — з'явиться о 8:00.";
+      briefEl.textContent = "Ранковий брифінг ще не згенеровано — з'явиться о 9:00.";
       briefEl.classList.add("muted-text");
     }
 
@@ -464,7 +597,7 @@
       briefEl.textContent = row.evening_brief;
       briefEl.classList.remove("muted-text");
     } else {
-      briefEl.textContent = "Вечірній підсумок з'явиться о 19:00.";
+      briefEl.textContent = "Вечірній підсумок з'явиться о 20:00.";
       briefEl.classList.add("muted-text");
     }
   }
@@ -535,16 +668,12 @@
 
   el("save-evening-btn").addEventListener("click", async function () {
     if (!selectedMood) {
-      el("evening-msg").textContent = "Обери оцінку дня (1-5).";
+      el("evening-msg").textContent = "Обери оцінку (1-5).";
       el("evening-msg").className = "error-msg";
       return;
     }
-    const moodNote = el("evening-mood-note").value.trim();
     const hardest = el("evening-hardest").value.trim();
     const tomorrow = el("evening-tomorrow").value.trim();
-    const noteParts = [];
-    if (moodNote) noteParts.push("Настрій: " + moodNote);
-    if (hardest) noteParts.push("Найважче: " + hardest);
 
     el("save-evening-btn").disabled = true;
     el("evening-msg").textContent = "Зберігаю...";
@@ -553,7 +682,7 @@
     try {
       await saveEveningToNotion({
         mood: Number(selectedMood),
-        note: noteParts.join(". "),
+        note: hardest,
         movement: selectedMovement,
         tomorrowIntention: tomorrow
       });
@@ -576,7 +705,7 @@
 
   // ---------- Ініціалізація ----------
 
-  function renderGreetingDate() {
+  function renderDate() {
     const now = new Date();
     el("today-date").textContent = now.toLocaleDateString("uk-UA", {
       weekday: "long", day: "numeric", month: "long"
@@ -584,11 +713,12 @@
   }
 
   async function init() {
-    renderGreetingDate();
+    renderDate();
     setTab(new Date().getHours() < 15 ? "morning" : "evening");
 
     try {
       const row = await fetchTodayRow();
+      renderWeather(row);
       renderMorning(row);
       renderEvening(row);
     } catch (e) {

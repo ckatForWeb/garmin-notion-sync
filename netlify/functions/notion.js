@@ -58,6 +58,8 @@ function pageToRow(page) {
     sleep_status: text(props, "Sleep status"),
     recovery_status: text(props, "Recovery status"),
     readiness_status: text(props, "Readiness status"),
+    weather_temp: num(props, "Weather temp"),
+    weather_condition: text(props, "Weather condition"),
   };
 }
 

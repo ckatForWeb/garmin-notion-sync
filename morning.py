@@ -1,7 +1,8 @@
 """
-Ранковий health-брифінг: генерує AI-текст і статуси (сон/відновлення/готовність)
-на основі сьогоднішніх Garmin-метрик, поточної погоди і вчорашньої вечірньої
-рефлексії, і зберігає результат у сьогоднішній рядок Notion.
+Ранковий health-брифінг: рахує статуси (сон/відновлення/готовність)
+детерміністично з порогів, генерує AI-текст поради на основі сьогоднішніх
+Garmin-метрик, поточної погоди і вчорашньої вечірньої рефлексії, і зберігає
+результат у сьогоднішній рядок Notion.
 
 Запускається після sync.py (дані за сьогодні вже мають бути в Notion).
 
@@ -9,7 +10,6 @@
   NOTION_TOKEN, NOTION_DATABASE_ID, ANTHROPIC_API_KEY, OPENWEATHER_API_KEY
 """
 
-import datetime
 import json
 import os
 import re
@@ -21,22 +21,27 @@ NOTION_DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 OPENWEATHER_API_KEY = os.environ["OPENWEATHER_API_KEY"]
 
-KYIV_LAT = 50.4501
-KYIV_LON = 30.5234
 MODEL = "claude-sonnet-4-6"
 
 # Персональний одноосібний проєкт — профіль просто хардкодиться, а не збирається
 # від користувача (генерація тепер відбувається тут, а не в браузері).
 USER_NAME = "Юрій"
 USER_WORK_TYPE = "сидяча"
-USER_AGE = 38
-USER_GOAL = "здоров'я"
 
 NOTION_HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
     "Notion-Version": "2022-06-28",
     "Content-Type": "application/json",
 }
+
+SYSTEM_PROMPT = (
+    "Ти персональний health-тренер. Говориш на 'ти', коротко і по суті, без медичного жаргону.\n"
+    "Враховуй погоду (якщо спека — про воду і навантаження, якщо холод — про суглоби і розминку).\n"
+    f"Враховуй тип роботи: {USER_WORK_TYPE} (нагадуй про рух і поставу).\n"
+    "Якщо стрес > 50 два дні поспіль — окремо скажи про це.\n"
+    "Якщо є вечірні нотатки вчора — враховуй їх у пораді.\n"
+    "Відповідай одним абзацом, 3-4 речення максимум."
+)
 
 
 def num(props: dict, name: str):
@@ -90,87 +95,68 @@ def fetch_recent_rows(limit: int = 3) -> list[dict]:
 
 def get_current_weather() -> dict:
     url = (
-        "https://api.openweathermap.org/data/2.5/weather?lat=" + str(KYIV_LAT) +
-        "&lon=" + str(KYIV_LON) + "&appid=" + OPENWEATHER_API_KEY + "&units=metric&lang=ua"
+        "https://api.openweathermap.org/data/2.5/weather?q=Kyiv&appid=" +
+        OPENWEATHER_API_KEY + "&units=metric&lang=ua"
     )
     resp = requests.get(url)
     resp.raise_for_status()
     data = resp.json()
     return {
         "temp": data.get("main", {}).get("temp"),
-        "feels_like": data.get("main", {}).get("feels_like"),
         "condition": (data.get("weather") or [{}])[0].get("description"),
-        "humidity": data.get("main", {}).get("humidity"),
     }
-
-
-def get_yesterday_evening_weather():
-    # Історія доступна лише на платному One Call 3.0 — якщо ключ без підписки,
-    # тихо пропускаємо і працюємо тільки з поточною погодою.
-    yesterday = (
-        datetime.datetime.now().replace(hour=22, minute=0, second=0, microsecond=0)
-        - datetime.timedelta(days=1)
-    )
-    dt = int(yesterday.timestamp())
-    url = (
-        "https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=" + str(KYIV_LAT) +
-        "&lon=" + str(KYIV_LON) + "&dt=" + str(dt) + "&appid=" + OPENWEATHER_API_KEY +
-        "&units=metric&lang=ua"
-    )
-    try:
-        resp = requests.get(url)
-        if not resp.ok:
-            return None
-        point = (resp.json().get("data") or [None])[0]
-        if not point:
-            return None
-        return {
-            "temp": point.get("temp"),
-            "condition": (point.get("weather") or [{}])[0].get("description"),
-        }
-    except requests.RequestException:
-        return None
 
 
 def has_elevated_stress_streak(rows: list[dict]) -> bool:
     streak = 0
     for row in rows:
-        if row.get("stress_avg") is not None and row["stress_avg"] >= 50:
+        if row.get("stress_avg") is not None and row["stress_avg"] > 50:
             streak += 1
         else:
             break
     return streak >= 2
 
 
-def build_system_prompt() -> str:
-    return (
-        f"Ти персональний health-тренер користувача на ім'я {USER_NAME}. "
-        "Говориш українською на 'ти', коротко і по суті, без медичного жаргону і без вибачень. "
-        f"Користувач: вік {USER_AGE}, тип роботи — {USER_WORK_TYPE}, ціль — {USER_GOAL}. "
-        "Враховуй погоду і тип роботи, коли даєш пораду. "
-        "Стрес (stress_avg) інтерпретуй так: <25 — низький, все добре; 25-50 — середній, це норма; "
-        "50+ — підвищений, обов'язково згадай це в пораді. "
-        "Якщо передано elevated_stress_streak: true — це означає підвищений стрес (50+) два або "
-        "більше днів поспіль; ОБОВ'ЯЗКОВО окремо наголоси в summary, що кілька днів поспіль "
-        "підвищений стрес і сьогодні важливо не додавати навантаження. "
-        "Якщо передано yesterday_evening_note або yesterday_tomorrow_intention — врахуй їх у "
-        "пораді (наприклад, якщо вчора користувач писав що було важко на роботі, порадь не "
-        "перевантажувати себе додатково сьогодні). "
-        "Відповідай ЛИШЕ JSON без жодного тексту навколо у форматі: "
-        '{"sleep_status": "green|yellow|red", "recovery_status": "green|yellow|red", '
-        '"readiness_status": "green|yellow|red", "summary": "один абзац: що відбувається з тілом, '
-        'чому (з урахуванням погоди), і одна конкретна порада на сьогодні"}'
-    )
+def compute_statuses(today: dict) -> dict:
+    sleep_score = today.get("sleep_score")
+    if sleep_score is not None and sleep_score >= 80:
+        sleep_status = "green"
+    elif sleep_score is not None and sleep_score >= 60:
+        sleep_status = "yellow"
+    else:
+        sleep_status = "red"
+
+    hrv_status = (today.get("hrv_status") or "").upper()
+    if hrv_status == "BALANCED":
+        recovery_status = "green"
+    elif hrv_status == "LOW":
+        recovery_status = "yellow"
+    elif hrv_status == "POOR":
+        recovery_status = "red"
+    else:
+        recovery_status = "yellow"
+
+    bb_high = today.get("body_battery_high")
+    if bb_high is not None and bb_high < 40:
+        readiness_status = "red"
+    elif bb_high is not None and bb_high >= 70 and sleep_status == "green":
+        readiness_status = "green"
+    else:
+        readiness_status = "yellow"
+
+    return {
+        "sleep_status": sleep_status,
+        "recovery_status": recovery_status,
+        "readiness_status": readiness_status,
+    }
 
 
-def build_user_message(rows: list[dict], current_weather: dict, yesterday_weather: dict | None) -> str:
+def build_user_message(rows: list[dict], weather: dict) -> str:
     today = rows[0]
     yesterday = rows[1] if len(rows) > 1 else {}
 
     msg = "Дані Garmin за сьогодні:\n" + json.dumps(today, ensure_ascii=False) + "\n\n"
-    msg += "Погода в Києві зараз:\n" + json.dumps(current_weather, ensure_ascii=False) + "\n"
-    if yesterday_weather:
-        msg += "Погода вчора о 22:00:\n" + json.dumps(yesterday_weather, ensure_ascii=False) + "\n"
+    msg += "Погода в Києві зараз:\n" + json.dumps(weather, ensure_ascii=False) + "\n"
 
     msg += "\nІсторія стресу (найсвіжіший перший):\n" + json.dumps(
         [{"date": r["date"], "stress_avg": r["stress_avg"]} for r in rows], ensure_ascii=False
@@ -195,7 +181,7 @@ def call_claude(system_prompt: str, user_message: str) -> str:
         },
         json={
             "model": MODEL,
-            "max_tokens": 1024,
+            "max_tokens": 512,
             "system": system_prompt,
             "messages": [{"role": "user", "content": user_message}],
         },
@@ -206,23 +192,15 @@ def call_claude(system_prompt: str, user_message: str) -> str:
     return "\n".join(text_blocks).strip()
 
 
-def extract_json(raw: str) -> dict:
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", raw, re.S)
-        if not match:
-            raise
-        return json.loads(match.group(0))
-
-
-def save_to_notion(page_id: str, brief: dict):
+def save_to_notion(page_id: str, summary: str, statuses: dict, weather: dict):
     url = f"https://api.notion.com/v1/pages/{page_id}"
     properties = {
-        "Morning brief": {"rich_text": [{"text": {"content": brief["summary"][:1900]}}]},
-        "Sleep status": {"rich_text": [{"text": {"content": brief["sleep_status"]}}]},
-        "Recovery status": {"rich_text": [{"text": {"content": brief["recovery_status"]}}]},
-        "Readiness status": {"rich_text": [{"text": {"content": brief["readiness_status"]}}]},
+        "Morning brief": {"rich_text": [{"text": {"content": summary[:1900]}}]},
+        "Sleep status": {"rich_text": [{"text": {"content": statuses["sleep_status"]}}]},
+        "Recovery status": {"rich_text": [{"text": {"content": statuses["recovery_status"]}}]},
+        "Readiness status": {"rich_text": [{"text": {"content": statuses["readiness_status"]}}]},
+        "Weather temp": {"number": weather.get("temp")},
+        "Weather condition": {"rich_text": [{"text": {"content": weather.get("condition") or ""}}]},
     }
     resp = requests.patch(url, headers=NOTION_HEADERS, json={"properties": properties})
     resp.raise_for_status()
@@ -233,15 +211,14 @@ def main():
     if not rows:
         raise SystemExit("У базі немає жодного рядка — спершу запусти sync.py")
 
-    current_weather = get_current_weather()
-    yesterday_weather = get_yesterday_evening_weather()
+    weather = get_current_weather()
+    statuses = compute_statuses(rows[0])
 
-    user_message = build_user_message(rows, current_weather, yesterday_weather)
-    raw = call_claude(build_system_prompt(), user_message)
-    brief = extract_json(raw)
+    user_message = build_user_message(rows, weather)
+    summary = call_claude(SYSTEM_PROMPT, user_message)
 
-    save_to_notion(rows[0]["page_id"], brief)
-    print(f"Morning brief saved for {rows[0]['date']}: {brief}")
+    save_to_notion(rows[0]["page_id"], summary, statuses, weather)
+    print(f"Morning brief saved for {rows[0]['date']}: {statuses} | {summary}")
 
 
 if __name__ == "__main__":
